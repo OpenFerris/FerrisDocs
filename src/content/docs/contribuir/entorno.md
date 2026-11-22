@@ -72,11 +72,15 @@ El repositorio **no se copia** en la imagen: Compose lo monta como bind mount.
 ```yaml
 volumes:
   - .:/workspace
+  # FerrisFramework references Core by path; the sibling is visible here.
+  - ../FerrisCore:/FerrisCore
 ```
 
 Eso hace que los cambios del host se vean al instante y que `target/` viva en tu
-disco, no dentro de la imagen. El precio es que el rendimiento del montaje
-depende del sistema de ficheros del host (ver más abajo).
+disco, no dentro de la imagen. El segundo montaje es obligatorio: las crates de
+Framework apuntan a `../../FerrisCore/ferris-*`, que desde `ferris-server/` (o
+cualquier crate hermana) resuelve a `/FerrisCore`. `FerrisCore` tiene su propio
+`Dockerfile` y `compose.yaml` para trabajar solo en la base.
 
 El `CMD` de la imagen es `bash`; Compose lo sobrescribe cuando le pasas un
 comando (`docker compose run --rm ferris cargo check`).

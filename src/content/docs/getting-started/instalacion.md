@@ -3,8 +3,8 @@ title: Instalación
 description: Requisitos de la versión actual de Ferris y cómo preparar el entorno de desarrollo con Docker y Docker Compose.
 ---
 
-Ferris no tiene instalador ni script de bootstrap: se compila desde el
-repositorio con Cargo y el binario resultante se llama `ferris`. El entorno
+Ferris no tiene instalador ni script de bootstrap: se compila desde los dos
+repositorios con Cargo y el binario resultante se llama `ferris`. El entorno
 canónico es un contenedor **Docker** que ya trae Rust, Node, los targets de
 WebAssembly y las herramientas de componentes, de modo que el mismo checkout
 compila igual en Linux, macOS y Windows.
@@ -190,7 +190,7 @@ cargo install cargo-leptos --locked
 cargo install wasm-tools --locked
 ```
 
-Además hacen falta Node 22.12 o superior, `build-essential`, `pkg-config`,
+Además hacen falta Node 22.23.4 o superior, `build-essential`, `pkg-config`,
 `libsqlite3-dev` y `libssl-dev`. Esta vía no está cubierta por la documentación
 ni por la CI: si algo falla por una versión distinta, el primer paso es volver a
 Docker.
