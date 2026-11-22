@@ -56,3 +56,5 @@ GitHub Pages cuando `master` cambia. `develop` solo ejecuta la CI
 - `master` — producción; solo merges de `release/*` y `hotfix/*`.
 
 Las reglas completas están en [`AGENTS.md`](AGENTS.md).
+
+<!-- pr probe -->
