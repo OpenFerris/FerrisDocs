@@ -17,7 +17,7 @@ Datos de versión de esta documentación:
 |---|---|
 | Ferris | `0.3.0` (pre-1.0) |
 | Toolchain | Rust `1.98.1`, edición 2024 |
-| Workspace | 21 crates |
+| Crates | 21 (9 en FerrisCore + 12 en FerrisFramework) |
 | Contrato WIT | `ferris:framework@0.3.0` |
 | Licencia | MIT |
 

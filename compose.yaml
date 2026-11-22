@@ -1,0 +1,30 @@
+# FerrisDocs development stack.
+#
+#   docker compose run --rm docs sh -lc 'npm ci && npm run build'
+#   docker compose run --rm docs sh -lc 'npm run dev -- --host 0.0.0.0'
+#
+# The checkout is bind-mounted at /site. `node_modules/` lives in a named
+# volume so a Linux host never ends up with root-owned dependency trees; the
+# built `dist/` is written back to the host as the invoking UID/GID.
+name: ferris-docs
+
+services:
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ferris-docs
+    working_dir: /site
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/site
+      - docs-node-modules:/site/node_modules
+    ports:
+      # Loopback only: the dev server serves plain HTTP.
+      - "127.0.0.1:4321:4321"
+    tty: true
+    stdin_open: true
+    command: bash
+
+volumes:
+  docs-node-modules:

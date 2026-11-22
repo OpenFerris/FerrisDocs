@@ -2,21 +2,23 @@ name: Docs
 
 on:
   push:
-    branches: [master, main]
+    branches: [master, develop]
   pull_request:
-    branches: [master, main]
+    branches: [master, develop]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,4 +27,5 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
+      - run: npm run check
       - run: npm run build

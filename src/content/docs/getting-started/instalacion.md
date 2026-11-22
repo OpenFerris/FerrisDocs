@@ -16,7 +16,7 @@ compila igual en Linux, macOS y Windows.
 | Docker Engine | 24 o superior | Construir y ejecutar la imagen de desarrollo |
 | Docker Compose | v2 (`docker compose`) | Orquestar `ferris`, PostgreSQL y Redis |
 | Git | 2.x | Clonar el repositorio |
-| Node.js | 22.12 o superior | **Opcional**: solo para el sitio de docs fuera de Docker |
+| Node.js | 22.23.4 o superior | **Opcional**: solo para el sitio de docs fuera de Docker |
 | Disco | varios GB libres | Imagen, dependencias y `target/` |
 
 No hace falta instalar Rust ni Node en el host: el `Dockerfile` los deja dentro
@@ -45,21 +45,30 @@ El `libssl-dev` es solo para las herramientas de desarrollo; la aplicación usa
 
 ## Clonar y construir
 
+Ferris se reparte en dos repositorios de Rust que deben estar **hermanos**:
+`FerrisFramework` (Desk, verticales, servidor y CLI) referencia a `FerrisCore`
+(base mínima) con rutas `../../FerrisCore/ferris-*`.
+
 ```bash
-git clone https://github.com/Stdg001/ferris.git
-cd ferris
+mkdir ferris && cd ferris
+git clone https://github.com/OpenFerris/FerrisFramework.git
+git clone https://github.com/OpenFerris/FerrisCore.git
+cd FerrisFramework
 docker compose build
 ```
+
+La documentación vive en un tercer repositorio,
+[`FerrisDocs`](https://github.com/OpenFerris/FerrisDocs), y se construye con
+Node sin depender de ninguno de los dos checkouts de Rust.
 
 `docker compose build` construye la imagen `ferris-dev` a partir del
 `Dockerfile`. La primera vez tarda varios minutos porque compila e instala
 `wasm-bindgen-cli`, `cargo-leptos` y `wasm-tools`; las siguientes reutilizan las
 capas.
 
-El servicio `ferris` monta el repositorio en `/workspace`, así que los cambios
-del host se ven al instante dentro del contenedor. El contexto de build excluye
-`target/`, `.git/`, `node_modules/` y `plugins/` (`.dockerignore`), de modo que
-la imagen no copia artefactos ni datos locales.
+El servicio `ferris` monta `FerrisFramework` en `/workspace` y `FerrisCore` en
+`/FerrisCore`, así que los cambios del host se ven al instante dentro del
+contenedor y las rutas `../../FerrisCore/...` resuelven.
 
 ## Abrir una shell
 

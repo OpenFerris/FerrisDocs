@@ -13,7 +13,7 @@ export const prerender = true;
 // `0.2/`). They are a frozen snapshot, so the LLM index points at the current
 // docs only; a consumer that needs a specific release can still fetch its
 // `/<version>/<slug>.md`.
-const VERSIONED = /^\d+(?:\.\d+)+\//;
+const VERSIONED = /^\d+(?:\.\d+)+(?:\/|$)/;
 
 export const GET: APIRoute = async () => {
   const docs = await getCollection('docs');

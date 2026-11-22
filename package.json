@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.3.0",
   "private": true,
-  "description": "Documentación oficial de Ferris: framework, CLI, API, Desk y apps WASM.",
+  "description": "Documentaci\u00f3n oficial de Ferris: framework, CLI, API, Desk y apps WASM.",
   "scripts": {
     "dev": "astro dev",
     "dev:bg": "astro dev --background",
@@ -11,7 +11,7 @@
     "dev:stop": "astro dev stop",
     "dev:logs": "astro dev logs",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/prefix-base.mjs",
     "preview": "astro preview",
     "check": "astro check"
   },

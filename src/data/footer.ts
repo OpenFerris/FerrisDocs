@@ -44,8 +44,13 @@ export const footerColumns = [
     links: [
       { label: 'Contribuir', href: '/contribuir/' },
       { label: 'Pruebas', href: '/contribuir/pruebas/' },
-      { label: 'GitHub', href: 'https://github.com/Stdg001/ferris' },
-      { label: 'Licencia MIT', href: 'https://github.com/Stdg001/ferris/blob/master/LICENSE' },
+      { label: 'GitHub', href: 'https://github.com/OpenFerris/FerrisFramework' },
+      { label: 'FerrisCore', href: 'https://github.com/OpenFerris/FerrisCore' },
+      { label: 'FerrisDocs', href: 'https://github.com/OpenFerris/FerrisDocs' },
+      {
+        label: 'Licencia MIT',
+        href: 'https://github.com/OpenFerris/FerrisFramework/blob/master/LICENSE',
+      },
     ],
   },
 ] satisfies FooterColumn[];

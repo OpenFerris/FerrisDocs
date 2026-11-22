@@ -63,7 +63,7 @@ ejecutan dentro del contenedor.
 | Versión | `cargo test -p ferris-wasm --test wit_version` | Siempre; obligatorio al subir la versión. |
 | Módulos nativos | `cargo test -p ferris-api --test architecture` y `cargo test -p ferris-server --lib router::tests::modules` | Si tocas `ferris-api`, un adaptador `http` o el registro de módulos. |
 | Estilo | `bash -lc 'cd ferris-web && node_modules/.bin/tailwindcss -i style/tailwind.css -o style/desk.css --minify'` | Si cambias clases o tokens. |
-| Sitio de docs | `bash -lc 'cd docs-site && npm run build'` | Si cambias una página, el sidebar o el tema. |
+| Sitio de docs | `bash -lc 'cd ../FerrisDocs && npm run build'` | Si cambias una página, el sidebar o el tema. |
 | Diff | `git diff` | Siempre; relee tu propio cambio. |
 
 Con la función anterior, cada fila se lanza como `dc <comando>`, por ejemplo:
@@ -80,10 +80,11 @@ completas están en [pruebas](/contribuir/pruebas/).
 
 ## Flujo de pull request
 
-1. **Parte de `master`** y crea una rama descriptiva.
+1. **Parte de `develop`** y crea una rama descriptiva (`feature/…`, `fix/…`).
+   `master` es producción: solo recibe merges de release o hotfix.
 2. **Lee el código y la documentación** de la crate que vas a tocar
-   (`AGENTS.md`, `docs-site/` y el `README.md` de la crate). No dupliques una
-   política que ya existe en otra capa.
+   (`AGENTS.md`, el repositorio `FerrisDocs` y el `README.md` de la crate). No
+   dupliques una política que ya existe en otra capa.
 3. **Haz el cambio más pequeño** que resuelve el problema, con su test de
    regresión si corrige un fallo.
 4. **Ejecuta los gates** aplicables. No declares verde lo que no ejecutaste.
@@ -100,14 +101,29 @@ wip: trabajo en curso
 
 El cuerpo explica el **porqué** y el alcance del cambio.
 
-7. **Abre el PR** contra `master`. La CI ejecuta formato, check, clippy
+7. **Abre el PR** contra `develop`. La CI ejecuta formato, check, clippy
    (grupo correctness), matriz de features, hydrate/SSR, tests y estilo.
 
 :::note
-Este checkout puede no tener remoto configurado. El repositorio canónico es
-<https://github.com/Stdg001/ferris>; no añadas un remoto ni hagas push sin que
-se te pida.
+Este checkout puede no tener remoto configurado. Los repositorios canónicos
+son <https://github.com/OpenFerris/FerrisFramework> y
+<https://github.com/OpenFerris/FerrisCore>; no añadas un remoto ni hagas push
+sin que se te pida.
 :::
+
+## Ramas
+
+| Rama | Papel |
+|---|---|
+| `develop` | Integración y rama por defecto. Todo PR de trabajo va aquí. |
+| `master` | Producción. Solo recibe merges de `release/*` y `hotfix/*`. |
+| `feature/*`, `fix/*` | Trabajo diario, creado desde `develop`. |
+| `release/*` | Congelación previa a publicar; se fusiona en `master` y se devuelve a `develop`. |
+| `hotfix/*` | Parche urgente desde `master`; se fusiona en `master` y en `develop`. |
+
+Los tres repositorios usan el mismo esquema. Un cambio que cruza Core y
+Framework se prepara en ramas con el mismo nombre y se abre como dos PR
+enlazados, empezando por `FerrisCore`.
 
 ## Reglas de revisión
 
@@ -138,8 +154,9 @@ implementación y la llamada.
 ## Documentación
 
 Si el cambio altera una interfaz pública —comando, flag, clave TOML, ruta,
-tipo—, actualiza la página correspondiente de `docs-site/` en el mismo PR. Las
-reglas editoriales están en [Documentación](/contribuir/documentacion/).
+tipo—, actualiza la página correspondiente del repositorio `FerrisDocs` en el
+mismo cambio. Las reglas editoriales están en
+[Documentación](/contribuir/documentacion/).
 
 ## Antes de decir "hecho"
 
@@ -147,7 +164,8 @@ reglas editoriales están en [Documentación](/contribuir/documentacion/).
 - [ ] Formato, clippy, check y tests en verde (o limitación declarada).
 - [ ] Si tocaste el frontend, `desk.css` regenerado y commiteado.
 - [ ] Si tocaste el contrato WIT, las dos copias de `ferris.wit` son idénticas.
-- [ ] Si moviste la versión, `Cargo.toml` y el paquete WIT comparten cifra y
+- [ ] Si moviste la versión, los dos `Cargo.toml`, el paquete WIT y
+      `FerrisDocs/project.json` comparten cifra y
       `cargo test -p ferris-wasm --test wit_version` pasa.
 - [ ] Si tocaste `ferris-api` o una vertical, el test de arquitectura confirma
       que la API no volvió a depender de la feature.

@@ -3,9 +3,10 @@ title: Documentación
 description: Cómo añadir una página al sitio de Ferris, frontmatter, navegación, enlaces y reglas editoriales.
 ---
 
-El sitio vive en `docs-site/` y usa **Astro + Starlight**. Astro aporta el
-framework y Vite el bundler; Starlight pone el shell: navegación lateral,
-búsqueda, modo oscuro, tabla de contenidos y accesibilidad.
+El sitio es el repositorio **`FerrisDocs`**, independiente de los dos
+workspaces de Rust, y usa **Astro + Starlight**. Astro aporta el framework y
+Vite el bundler; Starlight pone el shell: navegación lateral, búsqueda, modo
+oscuro, tabla de contenidos y accesibilidad.
 
 El sitio tiene **dos portales**:
 
@@ -22,9 +23,11 @@ para entenderse, probablemente pertenece al portal de Ferris y debe enlazarse
 desde allí.
 
 ```text
-docs-site/
+FerrisDocs/
 ├── astro.config.mjs          # Starlight, sidebar, versión y plugins
+├── project.json              # versión, crates y toolchain que publica el sitio
 ├── package.json
+├── scripts/prefix-base.mjs   # prefija los enlaces con /FerrisDocs en la build
 ├── src/
 │   ├── content.config.ts     # colecciones `docs` y `versions`
 │   ├── content/docs/         # las páginas de la versión actual
@@ -110,13 +113,14 @@ Reglas:
 
 ## Versiones
 
-La versión vive en `Cargo.toml` (`[workspace.package]`) y en el paquete WIT;
-`astro.config.mjs` la lee de Cargo y la inyecta como `__FERRIS_VERSION__`, así
-que el sitio no repite el número. El mismo bloque inyecta `__FERRIS_CRATES__`
-(miembros de `[workspace]`) y `__FERRIS_TOOLCHAIN__` (canal de
-`rust-toolchain.toml`), que alimentan las píldoras del hero. El test
-`ferris-wasm/tests/wit_version.rs` falla si Cargo y `ferris.wit` no coinciden o
-si las dos copias del WIT difieren.
+La versión se declara en los dos `Cargo.toml`
+(`[workspace.package]`) y en el paquete WIT, y el release la copia a
+`project.json`; `astro.config.mjs` lee ese fichero y la inyecta como
+`__FERRIS_VERSION__`, así que el sitio no repite el número y se construye sin
+un checkout de Rust al lado. El mismo bloque inyecta `__FERRIS_CRATES__` y
+`__FERRIS_TOOLCHAIN__`, que alimentan las píldoras del hero. El test
+`FerrisFramework/ferris-wasm/tests/wit_version.rs` falla si Cargo y `ferris.wit`
+no coinciden o si las dos copias del WIT difieren.
 
 `starlight-versions` archiva el contenido en `src/content/docs/<slug>/` cuando
 añades la versión a `plugins` en `astro.config.mjs`. La copia actual se edita;
@@ -186,8 +190,8 @@ Reglas de clases:
   `[aria-label]`), nunca con `!important`.
 - No añadas una regla que solo repite un valor por defecto de Starlight. Una
   regla propia debe cambiar la superficie, el estado o el ritmo.
-- Los datos del hero y del footer salen de `Cargo.toml`,
-  `rust-toolchain.toml` y `src/data/footer.ts`; no se duplican en el marcado.
+- Los datos del hero y del footer salen de `project.json` y
+  `src/data/footer.ts`; no se duplican en el marcado.
 - El CSS se organiza como CSS puro + tokens. No hay Tailwind en el sitio.
 
 ## Typecheck
@@ -238,19 +242,16 @@ cualquier cosa que dé miedo. Si todo es urgente, nada lo es.
 
 ## Comandos del sitio
 
-El sitio se compila dentro del dev container, que ya trae Node y el repositorio
-montado en `/workspace`:
+El sitio no necesita el workspace de Rust: basta con Node 24. Si trabajas
+dentro del contenedor de `FerrisFramework`, ejecuta los comandos con Node del
+host o publica el repositorio hermano en el contenedor; `FerrisDocs` no tiene
+`Dockerfile` propio.
 
 ```bash
-docker compose run --rm ferris bash -lc 'cd docs-site && npm ci'
-```
-
-Dentro del contenedor, los scripts son:
-
-```bash
+cd FerrisDocs
 npm ci            # instala exactamente package-lock.json
 npm run dev       # servidor de desarrollo; imprime la URL real
-npm run build     # genera el sitio estático en dist/
+npm run build     # genera el sitio estático en dist/ y prefija /FerrisDocs
 npm run preview   # sirve dist/ para comprobar la build
 npm run check     # valida tipos y contenido
 ```
@@ -289,11 +290,11 @@ Node 22.23 o superior (lo exige Astro 7); el dev container trae Node 24.
    código. Ante la duda, grep y lectura antes de escribirlo.
 5. **Nada de builds ni tests ejecutados en el host.** Las páginas de operaciones
    pueden describir comandos; la documentación no los ejecuta por ti.
-6. **Datos verificables.** Versión del workspace (la de `Cargo.toml`), Rust
-   `1.98.1`, el mismo número en el paquete WIT y 21 crates. Si un dato cambia,
-   se actualiza en todas las páginas que lo citan; la versión se lee de
-   `Cargo.toml` (o de `__FERRIS_VERSION__` en un componente), nunca se duplica
-   a mano.
+6. **Datos verificables.** Versión del workspace (la de los dos `Cargo.toml` y
+   `project.json`), Rust `1.98.1`, el mismo número en el paquete WIT y 21
+   crates. Si un dato cambia, se actualiza en todas las páginas que lo citan; el
+   sitio lo lee de `project.json` (o de `__FERRIS_VERSION__` en un componente),
+   nunca se duplica a mano.
 7. **80–220 líneas por página.** Una página que necesita 400 es dos páginas o
    una poda.
 8. **Enlaces con barra final.** Un enlace roto es un fallo de la página.

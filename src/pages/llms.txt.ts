@@ -9,7 +9,9 @@ import { getCollection } from 'astro:content';
  * single file can use `/llms-full.txt` instead.
  *
  * Links are absolute when the site origin is configured and root-relative
- * otherwise; both resolve on the same host.
+ * otherwise; both resolve on the same host. The deploy base (`/FerrisDocs` on
+ * GitHub Pages) is part of every URL, because this file is consumed outside a
+ * browser and a relative path would lose it.
  */
 export const prerender = true;
 
@@ -17,11 +19,12 @@ export const prerender = true;
 // `0.2/`). They are a frozen snapshot, so the LLM index points at the current
 // docs only; a consumer that needs a specific release can still fetch its
 // `/<version>/<slug>.md`.
-const VERSIONED = /^\d+(?:\.\d+)+\//;
+const VERSIONED = /^\d+(?:\.\d+)+(?:\/|$)/;
 
 export const GET: APIRoute = async ({ site }) => {
   const docs = await getCollection('docs');
-  const base = site ? site.toString().replace(/\/$/, '') : '';
+  const origin = site ? site.toString().replace(/\/$/, '') : '';
+  const base = `${origin}${import.meta.env.BASE_URL.replace(/\/$/, '')}`;
 
   const pages = docs
     .filter((entry) => entry.id !== '404' && !VERSIONED.test(entry.id))

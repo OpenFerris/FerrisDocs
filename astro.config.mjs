@@ -9,7 +9,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import starlightVersions from 'starlight-versions';
 
-const repo = 'https://github.com/Stdg001/ferris';
+const repo = 'https://github.com/OpenFerris/FerrisDocs';
 
 // One source of truth for the facts the shell repeats. The docs repo is
 // standalone: `project.json` is bumped by the release process together with
@@ -22,6 +22,8 @@ if (!version || !crates || !toolchain) {
 }
 
 export default defineConfig({
+  site: 'https://openferris.github.io',
+  base: '/FerrisDocs',
   // No `site` is hardcoded: the public domain is decided when the site is
   // published. Set it there (for example in the deploy environment) so
   // canonical URLs and the sitemap use the real origin instead of a guess.
@@ -41,7 +43,7 @@ export default defineConfig({
       },
       social: [{ icon: 'github', label: 'GitHub', href: repo }],
       editLink: {
-        baseUrl: `${repo}/edit/master/docs-site/`,
+        baseUrl: `${repo}/edit/master/src/content/docs/`,
       },
       customCss: ['./src/styles/custom.css'],
       plugins: [
