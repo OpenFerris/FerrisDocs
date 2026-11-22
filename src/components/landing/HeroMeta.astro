@@ -1,0 +1,25 @@
+---
+/**
+ * Project facts for the landing hero.
+ *
+ * The values come from build-time defines read out of `Cargo.toml` and
+ * `rust-toolchain.toml` (see `astro.config.mjs`), so the pills cannot drift
+ * from the workspace they document. The visual hooks follow the site's naming
+ * convention: `ferris-hero__<element>`, described in `src/styles/landing.css`.
+ */
+const version = __FERRIS_VERSION__;
+const toolchain = __FERRIS_TOOLCHAIN__;
+const crates = __FERRIS_CRATES__;
+---
+
+<ul class="ferris-hero__meta" aria-label="Datos del proyecto">
+  <li class="ferris-hero__pill">
+    <span class="ferris-hero__dot" aria-hidden="true"></span>
+    <strong>v{version}</strong> · pre-1.0
+  </li>
+  <li class="ferris-hero__pill">Rust {toolchain} · edición 2024</li>
+  <li class="ferris-hero__pill">
+    WIT <code>ferris:framework@{version}</code>
+  </li>
+  <li class="ferris-hero__pill">{crates} crates · MIT</li>
+</ul>

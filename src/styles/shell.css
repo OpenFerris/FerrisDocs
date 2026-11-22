@@ -1,0 +1,168 @@
+/* Shell chrome: header, search trigger, sidebar and the right-hand outline.
+ *
+ * Starlight keeps the layout; these rules only change the surface and the
+ * hover/active affordances. Everything is expressed with a token.
+ */
+
+/* ---- Header ------------------------------------------------------------- */
+
+header.header {
+  border-block-end: 1px solid var(--sl-color-hairline);
+  background-color: color-mix(in oklab, var(--sl-color-bg-nav) 84%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.site-title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  transition: color var(--ferris-transition-fast);
+}
+
+.site-title:hover {
+  color: var(--sl-color-accent-high);
+}
+
+/* The search trigger is a button, not an input: make it look like a field so it
+ * reads as "search" before it is clicked. Starlight already hides the border on
+ * mobile, so the pill only applies where the label and shortcut are visible.
+ * The `[aria-label]` keeps the selector above Starlight's scoped button rule
+ * (two attributes), which would otherwise win for border and background. */
+@media (min-width: 50rem) {
+  site-search button[data-open-modal][aria-label] {
+    appearance: none;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: var(--ferris-radius-pill);
+    background-color: var(--sl-color-bg-sidebar);
+    transition:
+      border-color var(--ferris-transition),
+      background-color var(--ferris-transition);
+  }
+
+  /* The trigger starts disabled until Pagefind finishes loading. Without this
+   * the UA paints its own light button face on the dark theme. */
+  site-search button[data-open-modal][aria-label]:disabled {
+    cursor: progress;
+    opacity: 0.65;
+  }
+
+  site-search button[data-open-modal][aria-label]:not(:disabled):hover {
+    border-color: var(--ferris-border-hover);
+    background-color: color-mix(in oklab, var(--sl-color-accent) 6%, var(--sl-color-bg-sidebar));
+  }
+
+  site-search button > kbd {
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.35rem;
+  }
+}
+
+/* ---- Sidebar ------------------------------------------------------------ */
+
+.sidebar-content a {
+  border-radius: var(--ferris-radius-sm);
+  margin-inline: -0.35rem;
+  padding-inline: 0.55rem;
+  transition:
+    background-color var(--ferris-transition-fast),
+    color var(--ferris-transition-fast);
+}
+
+.sidebar-content a:hover {
+  background-color: var(--ferris-surface-hover);
+}
+
+/* `[href]` raises the selector above Starlight's scoped active rule, so the
+ * current item keeps the tinted surface even while hovered instead of flipping
+ * to the solid accent background. */
+.sidebar-content a[aria-current='page'][href],
+.sidebar-content a[aria-current='page'][href]:hover {
+  background-color: var(--ferris-surface-active);
+  color: var(--sl-color-accent-high);
+  font-weight: 600;
+}
+
+.sidebar-content summary:hover .group-label {
+  color: var(--sl-color-accent-high);
+}
+
+/* ---- Version picker ----------------------------------------------------- */
+
+/* The plugin sizes the select to `6.5em`, which truncates `v0.3.0 (dev)`.
+ * Widen the control so the selected label fits; the plugin's ellipsis remains
+ * only as a last resort for a future longer label. */
+starlight-version-select label {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--ferris-radius-pill);
+  padding-inline: 0.1rem;
+  background-color: var(--sl-color-bg-sidebar);
+}
+
+starlight-version-select select {
+  min-inline-size: 10em;
+}
+
+starlight-theme-select select {
+  inline-size: auto;
+  min-inline-size: 6.5rem;
+}
+
+/* ---- Table of contents -------------------------------------------------- */
+
+starlight-toc nav > h2 {
+  margin-block-end: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+}
+
+starlight-toc a {
+  border-radius: var(--ferris-radius-sm);
+  padding-block: 0.3rem;
+  transition:
+    background-color var(--ferris-transition-fast),
+    color var(--ferris-transition-fast);
+}
+
+starlight-toc a:hover {
+  background-color: var(--ferris-surface-hover);
+}
+
+/* Starlight's per-component rule for the current heading is scoped with two
+ * attributes (`a[data-astro-cid][aria-current]`), which outranks a plain
+ * `a[aria-current]`. The `[href]` keeps this override specific enough to win
+ * without `!important` or a data-astro hash. */
+starlight-toc a[aria-current='true'][href] {
+  background-color: var(--ferris-surface-active);
+  color: var(--sl-color-accent-high);
+  font-weight: 600;
+}
+
+/* ---- Prev / next pagination -------------------------------------------- */
+
+.pagination-links a {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--ferris-radius);
+  background-color:
+    linear-gradient(180deg, color-mix(in oklab, var(--sl-color-bg-sidebar) 55%, transparent), transparent),
+    var(--sl-color-bg);
+  /* Replace Starlight's drop shadow: the cards are flat until hovered. */
+  box-shadow: none;
+  transition:
+    border-color var(--ferris-transition),
+    transform var(--ferris-transition),
+    box-shadow var(--ferris-transition);
+}
+
+@media (hover: hover) {
+  .pagination-links a:hover {
+    border-color: var(--ferris-border-hover);
+    box-shadow: var(--ferris-shadow-soft);
+    transform: translateY(-1px);
+  }
+}
+
+.pagination-links .link-title {
+  font-size: var(--sl-text-xl);
+}

@@ -1,0 +1,162 @@
+---
+title: Ferris
+description: Framework web full-stack en Rust, dirigido por metadatos, con Desk
+  propio y apps externas como componentes WASM.
+template: splash
+hero:
+  tagline: Metadatos, documentos y componentes WASM. Un framework full-stack en
+    Rust para aplicaciones de negocio.
+  image:
+    file: ../../../assets/0.2/logo.svg
+    alt: Logotipo de Ferris
+  actions:
+    - text: Empezar en 10 minutos
+      link: /0.2/getting-started/inicio-rapido/
+      icon: rocket
+    - text: Escribir una app WASM
+      link: /0.2/apps/
+      variant: minimal
+      icon: puzzle
+slug: "0.2"
+---
+
+import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<div class="ferris-hero-meta">
+  <span class="ferris-pill">
+    <span class="ferris-dot" aria-hidden="true" />
+
+    <strong>v0.2.0</strong> · pre-1.0
+  </span>
+
+  <span class="ferris-pill">Rust 1.98.1 · edición 2024</span>
+  <span class="ferris-pill">WIT <code>ferris:framework@0.2.0</code></span>
+  <span class="ferris-pill">22 crates · MIT</span>
+</div>
+
+Ferris convierte una descripción de datos en una aplicación completa. Los
+**DocTypes** declaran campos, permisos y ciclo de vida; el motor aplica
+validación, naming, workflows y auditoría; el **Desk** genera formularios,
+listas, dashboards y widgets a partir de esa misma descripción. Las
+funcionalidades externas se publican como **apps WASM** que el host carga en su
+propio sandbox.
+
+No hay que escribir HTML ni JavaScript para el CRUD: se declara el DocType y el
+resto se deriva. Y una app externa no tiene que estar escrita en Rust — el
+contrato es WIT y acepta Python, JavaScript/TypeScript, Go, C/C++/C#, Zig o
+cualquier toolchain que produzca un componente del world `ferris-app`.
+
+## Dos portales, un sistema
+
+<CardGrid>
+  <LinkCard title="Usar Ferris" href="/getting-started/" description="Instala, declara DocTypes y sirve el Desk y la API con el framework." />
+
+  <LinkCard title="Crear una app WASM" href="/apps/" description="El contrato WIT, el descriptor, las rutas y los widgets de un componente externo." />
+</CardGrid>
+
+## Empieza por donde estás
+
+<CardGrid>
+  <Card title="Instalar" icon="rocket">
+    Docker trae Rust, Node, los targets WASM y las herramientas. Un comando y
+    el Desk responde.
+    [Instalación →](/0.2/getting-started/instalacion/)
+  </Card>
+
+  <Card title="Modelar datos" icon="pencil">
+    Un DocType es la unidad de diseño: campos tipados, permisos por rol y
+    naming. [DocTypes →](/0.2/conceptos/doctypes/)
+  </Card>
+
+  <Card title="Construir pantallas" icon="laptop">
+    Formularios, listas, kanban, dashboards y widgets salen del metadato.
+    [Desk →](/0.2/frontend/desk/)
+  </Card>
+
+  <Card title="Exponer la API" icon="setting">
+    REST, JSON-RPC, Batch y un subconjunto de GraphQL sobre los mismos
+    documentos. [API HTTP →](/0.2/api/)
+  </Card>
+
+  <Card title="Automatizar" icon="approve-check">
+    Hooks, workflows, jobs y scheduler para el ciclo de vida del documento.
+    [Ciclo de vida →](/0.2/arquitectura/ciclo-de-vida/)
+  </Card>
+
+  <Card title="Desplegar" icon="download">
+    SQLite, PostgreSQL o MySQL; features por subsistema, tenants y
+    observabilidad. [Operaciones →](/0.2/operaciones/)
+  </Card>
+</CardGrid>
+
+## El framework en una vista
+
+Un DocType es una declaración; el motor y el Desk hacen el resto. Este ejemplo
+es del portal **Ferris**; si vas a escribir una app WASM, empieza en
+[Apps](/0.2/apps/) y elige tu lenguaje.
+
+```rust
+use ferris_schema::{DoctypeMeta, FieldMeta, RolePermission};
+
+pub fn invoice_meta() -> DoctypeMeta {
+    DoctypeMeta::new("Invoice", "Billing")
+        .description("Una factura emitida a un cliente.")
+        .title_field("customer")
+        .naming_series("INV-.#####")
+        .submittable()
+        .field(FieldMeta::link("customer", "Customer").required().in_list_view())
+        .field(FieldMeta::currency("total").label("Total"))
+        .field(FieldMeta::select("status", "Draft\nPaid\nVoid"))
+        .permission(RolePermission::new("Billing User").read().write().create())
+        .permission(RolePermission::new("Billing Manager").read().write().create().submit())
+}
+```
+
+```bash
+ferris new billing --into plugins/billing
+ferris migrate
+ferris serve --all
+```
+
+## Una app, cualquier lenguaje
+
+Una app es un componente WebAssembly que implementa el world `ferris-app`:
+declara lo que ofrece en `describe()` y el host monta sus DocTypes, rutas,
+widgets y hooks. El componente puede venir de cualquiera de estas cadenas:
+
+<CardGrid>
+  <Card title="Rust" icon="rocket">
+    `wit-bindgen` y `cargo build --target wasm32-wasip2`.
+    [Guía →](/0.2/apps/languages/rust/)
+  </Card>
+
+  <Card title="Python" icon="document">
+    `componentize-py` envuelve el intérprete en el componente.
+    [Guía →](/0.2/apps/languages/python/)
+  </Card>
+
+  <Card title="JavaScript / TypeScript" icon="window">
+    `jco` genera el proyecto y compila a componente.
+    [Guía →](/0.2/apps/languages/javascript/)
+  </Card>
+
+  <Card title="Go" icon="server">
+    `componentize-go` produce el `.wasm` desde un módulo Go.
+    [Guía →](/0.2/apps/languages/go/)
+  </Card>
+</CardGrid>
+
+## Política de versiones
+
+La versión de Cargo y la del contrato WIT son **la misma cifra**, y esa cifra
+indica compatibilidad: un patch no toca el contrato, una minor añade superficie
+retrocompatible y una major rompe. Ferris está en `0.2.0`, así que todavía es
+pre-1.0; fija un tag o un commit para producción.
+
+[Leer la política completa →](/0.2/referencia/versionado/)
+
+<Aside>
+  La fuente de verdad es el código de este repositorio. Si una página y el
+  código discrepan, gana el código: abre un issue o un PR contra
+  [Stdg001/ferris](https://github.com/Stdg001/ferris).
+</Aside>

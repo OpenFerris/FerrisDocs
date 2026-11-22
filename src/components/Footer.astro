@@ -1,0 +1,48 @@
+---
+import Default from '@astrojs/starlight/components/Footer.astro';
+import { Icon } from '@astrojs/starlight/components';
+import { footerColumns } from '../data/footer';
+
+const version = __FERRIS_VERSION__;
+const year = new Date().getFullYear();
+---
+
+{/* Render Starlight's Footer first: it owns pagination and the "edit page"
+    link. Replacing the component outright would silently remove both. */}
+<Default />
+
+<footer class="ferris-footer">
+  <div class="ferris-footer__inner">
+    <div class="ferris-footer__brand">
+      <a class="ferris-footer__logo" href="/">
+        <span class="ferris-footer__mark" aria-hidden="true">F</span>
+        Ferris
+      </a>
+      <p>
+        Framework web full-stack en Rust, dirigido por metadatos y con apps
+        externas como componentes WASM.
+      </p>
+      <span class="ferris-footer__badge">v{version} · pre-1.0</span>
+    </div>
+
+    {footerColumns.map((column) => (
+      <nav class="ferris-footer__column" aria-labelledby={column.id}>
+        <h2 id={column.id}>{column.title}</h2>
+        <ul>
+          {column.links.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    ))}
+  </div>
+
+  <div class="ferris-footer__bottom">
+    <span>© {year} Ferris · MIT</span>
+    <span class="ferris-footer__built">
+      <Icon name="rocket" size="0.9rem" /> Rust · Astro · Starlight
+    </span>
+  </div>
+</footer>

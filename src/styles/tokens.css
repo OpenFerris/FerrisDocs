@@ -1,0 +1,84 @@
+/* Design tokens.
+ *
+ * Starlight exposes its shell through `--sl-color-*` custom properties, so
+ * rebranding means overriding tokens, not restyling markup. The Ferris tokens
+ * (`--ferris-*`) describe the surfaces, shapes and motion this site adds.
+ *
+ * Two rules keep this file honest:
+ *   - every colour at a point of use is a token, never a literal;
+ *   - accent washes are defined once here, so hover, active and subtle
+ *     surfaces cannot drift by one percentage point per component.
+ *
+ * Light is the default set; dark overrides only what changes.
+ */
+
+:root,
+:root[data-theme='light'] {
+  /* Accent: teal. Low is a surface, high is text on a light background. */
+  --sl-color-accent-low: #ccfbf1;
+  --sl-color-accent: #0d9488;
+  --sl-color-accent-high: #115e59;
+
+  /* Surfaces */
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: #ffffff;
+  --sl-color-bg-sidebar: #fbfcfe;
+  --sl-color-hairline: #e6ebf2;
+  --sl-color-hairline-light: #eef2f7;
+  --sl-color-hairline-shade: #dbe3ec;
+
+  /* Semantic accent surfaces. `subtle` is for table headers and quiet
+   * backgrounds, `hover` for hovered controls and inline code, `active` for
+   * the current sidebar/TOC entry and icon chips. */
+  --ferris-surface-subtle: color-mix(in oklab, var(--sl-color-accent) 5%, transparent);
+  --ferris-surface-hover: color-mix(in oklab, var(--sl-color-accent) 8%, transparent);
+  --ferris-surface-active: color-mix(in oklab, var(--sl-color-accent) 12%, transparent);
+  --ferris-selection: color-mix(in oklab, var(--sl-color-accent) 30%, transparent);
+
+  /* Border states. `accent` is decorative (chips, quotes); `hover` mixes with
+   * the hairline so an interactive edge never becomes a flat accent line. */
+  --ferris-border-accent: color-mix(in oklab, var(--sl-color-accent) 45%, transparent);
+  --ferris-border-hover: color-mix(in oklab, var(--sl-color-accent) 55%, var(--sl-color-hairline));
+
+  --ferris-violet: #7c3aed;
+
+  /* Shapes, elevation and motion */
+  --ferris-radius-sm: 0.55rem;
+  --ferris-radius: 0.9rem;
+  --ferris-radius-pill: 999px;
+  --ferris-shadow-color: #0f172a;
+  --ferris-shadow: 0 18px 40px -24px color-mix(in oklab, var(--ferris-shadow-color) 30%, transparent);
+  --ferris-shadow-soft: 0 10px 26px -20px color-mix(in oklab, var(--ferris-shadow-color) 35%, transparent);
+  --ferris-focus-ring: 2px solid var(--sl-color-accent);
+  --ferris-transition: 140ms ease;
+  --ferris-transition-fast: 120ms ease;
+  --ferris-container: 76rem;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #0f3d3a;
+  --sl-color-accent: #2dd4bf;
+  --sl-color-accent-high: #99f6e4;
+
+  --sl-color-bg: #0b1120;
+  --sl-color-bg-nav: #0b1120;
+  --sl-color-bg-sidebar: #0d1526;
+  --sl-color-hairline: #1e293b;
+  --sl-color-hairline-light: #172033;
+  --sl-color-hairline-shade: #263449;
+
+  --ferris-violet: #a78bfa;
+
+  /* Shadows get their own colour per theme; the geometry stays shared. */
+  --ferris-shadow-color: #000000;
+  --ferris-shadow: 0 20px 44px -24px color-mix(in oklab, var(--ferris-shadow-color) 70%, transparent);
+  --ferris-shadow-soft: 0 12px 30px -22px color-mix(in oklab, var(--ferris-shadow-color) 60%, transparent);
+}
+
+/* One font stack for prose and one for code. The `--sl-font*` names are what
+ * Starlight reads; the fallbacks keep the site readable before the web fonts
+ * arrive (or when they are blocked). */
+:root {
+  --sl-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}

@@ -1,0 +1,72 @@
+/* Ferris documentation theme — entry point.
+ *
+ * The shell is Starlight's; this file only rebrands and polishes it. Styles are
+ * split by responsibility so a change lands in one place:
+ *
+ *   tokens.css   — design tokens and the Starlight theme overrides
+ *   base.css     — typography, focus, links and global element defaults
+ *   shell.css    — header, search, sidebar, table of contents, pagination
+ *   content.css  — Markdown prose: code, tables, asides, details, cards
+ *   landing.css  — the splash template and the hero pills
+ *   footer.css   — the site footer (`.ferris-footer`)
+ *
+ * Cascade contract: Starlight's global styles live in `@layer`, so these
+ * unlayered files win without `!important`. Component-scoped styles are
+ * emitted unlayered; when one sets the same property, raise specificity with a
+ * stable attribute (`[href]`, `[aria-label]`) instead of adding `!important`.
+ * Do not wrap these files in a layer. Target Starlight's documented hooks
+ * (`sl-*`, `starlight-*`, `sidebar-content`, `pagination-links`) and prefer a
+ * token over a new literal.
+ *
+ * Class naming: `ferris-<block>` for a standalone component,
+ * `ferris-<block>__<element>` for its parts and `ferris-<block>--<modifier>`
+ * for variants. Starlight's own hooks are never renamed.
+ */
+
+@import './tokens.css';
+@import './base.css';
+@import './shell.css';
+@import './content.css';
+@import './landing.css';
+@import './footer.css';
+
+/* Motion is decoration here: cards lift, links fade and the header blurs. None
+ * of it carries meaning, so honouring the preference is one rule for the whole
+ * site instead of a repeated exception per component. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .card,
+  .sl-link-card,
+  .pagination-links a,
+  .sidebar-content a,
+  .site-title,
+  starlight-toc a,
+  site-search button[data-open-modal][aria-label],
+  [data-has-hero] .hero .actions a,
+  .ferris-footer a {
+    transition: none;
+  }
+
+  .card:hover,
+  .sl-link-card:hover,
+  .pagination-links a:hover,
+  [data-has-hero] .hero .actions a:hover {
+    transform: none;
+  }
+}
+
+/* Printing a page should produce the document, not the site chrome. The
+ * gradient hero title needs its fill restored or it prints blank. */
+@media print {
+  [data-has-hero] .hero h1 {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+
+  .ferris-footer {
+    display: none;
+  }
+}

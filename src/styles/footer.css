@@ -1,0 +1,140 @@
+/* Site footer (`.ferris-footer`).
+ *
+ * Rendered after Starlight's own footer, which keeps pagination and the "edit
+ * page" link. The block is a three-column link directory on desktop, two on
+ * tablets and one on phones, built from `src/data/footer.ts`.
+ */
+
+.ferris-footer {
+  margin-block-start: 3rem;
+  border-block-start: 1px solid var(--sl-color-hairline);
+  background-color: color-mix(in oklab, var(--sl-color-bg-sidebar) 70%, transparent);
+}
+
+.ferris-footer__inner {
+  display: grid;
+  grid-template-columns: minmax(15rem, 1.6fr) repeat(3, minmax(8rem, 1fr));
+  gap: 2rem;
+  max-inline-size: var(--ferris-container);
+  margin-inline: auto;
+  padding-block: 2.75rem 1.75rem;
+  padding-inline: 1.5rem;
+}
+
+.ferris-footer__brand p {
+  max-inline-size: 24rem;
+  margin-block: 0.75rem;
+  color: var(--sl-color-gray-3);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* `--sl-color-white` is the foreground in both themes (Starlight flips it).
+ * Do not pair this with a `--sl-color-black` override: that token is the page
+ * background and would hide the logo in light mode. */
+.ferris-footer__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--sl-color-white);
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color var(--ferris-transition-fast);
+}
+
+.ferris-footer__logo:hover {
+  color: var(--sl-color-accent-high);
+}
+
+.ferris-footer__mark {
+  display: grid;
+  place-items: center;
+  inline-size: 1.8rem;
+  block-size: 1.8rem;
+  border: 1px solid var(--ferris-border-accent);
+  border-radius: var(--ferris-radius-sm);
+  background-color: var(--ferris-surface-active);
+  color: var(--sl-color-accent-high);
+  font-size: 0.95rem;
+}
+
+.ferris-footer__badge {
+  display: inline-flex;
+  padding: 0.18rem 0.6rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--ferris-radius-pill);
+  color: var(--sl-color-gray-3);
+  font-size: 0.75rem;
+}
+
+.ferris-footer__column h2 {
+  margin-block: 0 0.75rem;
+  color: var(--sl-color-gray-3);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ferris-footer__column ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ferris-footer__column a {
+  color: var(--sl-color-gray-2);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color var(--ferris-transition-fast);
+}
+
+.ferris-footer__column a:hover {
+  color: var(--sl-color-accent-high);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ferris-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-inline-size: var(--ferris-container);
+  margin-inline: auto;
+  padding-block: 1rem 1.5rem;
+  padding-inline: 1.5rem;
+  border-block-start: 1px solid var(--sl-color-hairline-light);
+  color: var(--sl-color-gray-3);
+  font-size: 0.8rem;
+}
+
+.ferris-footer__built {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+@media (max-width: 60rem) {
+  .ferris-footer__inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .ferris-footer__brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 34rem) {
+  .ferris-footer__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ferris-footer__brand {
+    grid-column: auto;
+  }
+}

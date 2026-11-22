@@ -1,0 +1,162 @@
+/* Splash template (`template: splash`).
+ *
+ * Covers the hero, its project-fact pills and the section rhythm of the
+ * landing page.
+ *
+ * Legacy aliases: the frozen 0.2 copy still uses `ferris-hero-meta`,
+ * `ferris-pill` and `ferris-dot`. They are kept beside their replacements and
+ * must not be extended; new markup uses the `ferris-hero__*` names.
+ */
+
+/* ---- Hero --------------------------------------------------------------- */
+
+[data-has-hero] .hero {
+  position: relative;
+  isolation: isolate;
+  padding-block: 3.5rem 1.5rem;
+}
+
+[data-has-hero] .hero::before {
+  content: '';
+  position: absolute;
+  inset: -6rem -2rem auto;
+  z-index: -1;
+  block-size: 30rem;
+  background:
+    radial-gradient(
+      38rem 20rem at 18% 8%,
+      color-mix(in oklab, var(--sl-color-accent) 24%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      32rem 18rem at 86% 0%,
+      color-mix(in oklab, var(--ferris-violet) 16%, transparent),
+      transparent 70%
+    );
+  /* Fade the glow before the content edge instead of ending it with a visible
+   * vertical cut. */
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 8rem,
+    #000 calc(100% - 8rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 8rem,
+    #000 calc(100% - 8rem),
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+[data-has-hero] .hero h1 {
+  font-size: clamp(2.75rem, 7vw, 4.5rem);
+  line-height: 1.02;
+  color: var(--sl-color-accent-high);
+  background: linear-gradient(
+    120deg,
+    var(--sl-color-accent-high) 0%,
+    var(--sl-color-accent) 48%,
+    var(--ferris-violet) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-has-hero] .hero .tagline {
+  max-inline-size: 44rem;
+  color: var(--sl-color-gray-2);
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+  line-height: 1.55;
+}
+
+[data-has-hero] .hero img {
+  filter: drop-shadow(0 24px 48px color-mix(in oklab, var(--sl-color-accent) 28%, transparent));
+}
+
+[data-has-hero] .hero .actions a {
+  padding-inline: 1.25rem;
+  border-radius: var(--ferris-radius-pill);
+  font-weight: 600;
+  transition:
+    transform var(--ferris-transition),
+    box-shadow var(--ferris-transition);
+}
+
+@media (hover: hover) {
+  [data-has-hero] .hero .actions a:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--ferris-shadow-soft);
+  }
+}
+
+/* ---- Project facts ------------------------------------------------------ */
+
+.ferris-hero__meta,
+.ferris-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 0 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.ferris-hero__pill,
+.ferris-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--ferris-radius-pill);
+  background-color: color-mix(in oklab, var(--sl-color-bg-sidebar) 80%, transparent);
+  color: var(--sl-color-gray-2);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.ferris-hero__pill strong,
+.ferris-pill strong {
+  color: var(--sl-color-accent-high);
+  font-weight: 600;
+}
+
+.ferris-hero__pill code,
+.ferris-pill code {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 0.95em;
+}
+
+.ferris-hero__dot,
+.ferris-dot {
+  inline-size: 0.45rem;
+  block-size: 0.45rem;
+  border-radius: var(--ferris-radius-pill);
+  background-color: var(--sl-color-accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--sl-color-accent) 22%, transparent);
+}
+
+/* ---- Landing sections --------------------------------------------------- */
+
+[data-has-hero] .sl-markdown-content > :is(p, ul, ol, .starlight-aside):not(.ferris-hero__meta) {
+  max-inline-size: 65ch;
+}
+
+[data-has-hero] .sl-markdown-content > p:first-of-type {
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+[data-has-hero] .sl-markdown-content > h2 {
+  margin-block-start: 3.25rem;
+  padding-block-end: 0.5rem;
+  border-block-end: 1px solid var(--sl-color-hairline);
+}

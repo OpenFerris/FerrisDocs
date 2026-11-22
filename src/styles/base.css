@@ -1,0 +1,68 @@
+/* Element defaults: typography, selection, focus and shared scrollbars.
+ *
+ * Focus is global on purpose. Starlight styles its own controls, but every new
+ * link, summary or card inherits a visible ring from here instead of relying on
+ * the author to remember one.
+ */
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+h1,
+h2 {
+  letter-spacing: -0.02em;
+}
+
+h3,
+h4 {
+  letter-spacing: -0.01em;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+::selection {
+  background-color: var(--ferris-selection);
+}
+
+/* Starlight sets `scroll-padding-top` for the fixed header and the mobile TOC,
+ * so headings need no extra `scroll-margin`: adding one doubles the gap. */
+
+:is(a, button, summary, input, select, textarea):focus-visible {
+  outline: var(--ferris-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Prose links stay accent-coloured (Starlight owns the colour) and get a
+ * quieter underline that becomes solid on hover. */
+.sl-markdown-content a:not(:where(.not-content *)) {
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+}
+
+.sl-markdown-content a:not(:where(.not-content *)):hover {
+  text-decoration-color: currentColor;
+}
+
+/* Thin, theme-aware scrollbars for the two places that really scroll: the
+ * sidebar and wide tables. `color-scheme` keeps the native fallback in step. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+.sidebar-content,
+.sl-markdown-content table:not(:where(.not-content *)) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sl-color-gray-5) transparent;
+}

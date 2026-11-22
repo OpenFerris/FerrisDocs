@@ -1,0 +1,141 @@
+---
+title: Apps WASM
+description: Qué es una app de Ferris, qué declara el componente, dónde vive en
+  el host y qué superficie obtiene sin escribir Rust.
+slug: 0.2/apps
+---
+
+Una **app** de Ferris (también *plugin*) es un **componente WebAssembly** que
+implementa el world `ferris-app`. El host lo carga, lo instancia en un sandbox y
+le entrega exactamente los servicios que la app declaró. La app no enlaza el
+framework, no abre sockets, no habla SQL y no lee certificados: pide, y el host
+ejecuta en su nombre.
+
+:::tip[No necesitas Rust]
+El contrato es WIT, no un lenguaje. Puedes escribir la app en Python,
+JavaScript/TypeScript, Go, C/C++, C#, Zig o cualquier toolchain que produzca un
+componente del world `ferris-app`. Rust es una opción más, con su propia página
+en [lenguajes](/0.2/apps/languages/).
+:::
+
+## El contrato en una frase
+
+El paquete `ferris:framework@0.2.0` define seis interfaces de importación
+(`types`, `data`, `io`, `mqtt`, `platform`, `descriptor`) y ocho funciones de
+exportación. Todo lo que la app puede hacer entra por ahí, y todo lo que el host
+le pide sale por ahí.
+
+| Export | Cuándo lo llama el host |
+|---|---|
+| `describe` | al cargar la app, para conocer su superficie |
+| `handle-request` | una petición HTTP de una ruta de la app |
+| `doctype-event` | un evento del ciclo de vida de un DocType |
+| `handle-stream` | un fragmento de un stream abierto |
+| `handle-stream-event` | apertura, cierre o error de un stream |
+| `handle-job` | un trabajo en segundo plano |
+| `ui-asset` | el Desk pide un asset de la app |
+| `ui-widget` | el Desk pide el HTML SSR de un widget |
+
+## Qué declara una app
+
+`describe()` devuelve un `descriptor` tipado. No es un JSON que el host
+interprete a ciegas: es el registro del contrato, así que un campo mal escrito no
+compila en tu lenguaje. Con él la app declara:
+
+| Sección | Efecto |
+|---|---|
+| `doctypes` | DocTypes, campos, índices y vistas del Desk |
+| `routes` | endpoints HTTP que el host monta y te entrega |
+| `methods` | handlers en `/api/method/<name>` |
+| `workspaces`, `folders`, `themes` | navegación y paleta del Desk |
+| `ui-extensions`, `dashboards`, `widgets`, `website` | superficie visual |
+| `capabilities` | privilegios **específicos** que la app pide |
+| `subscriptions` | canales de pubsub a los que publica |
+| `mqtt-subscriptions` | suscripciones que el host crea en su cliente MQTT |
+| `config` | esquema de ajustes que el Desk renderiza |
+| `assets` | ficheros que sirve `ui-asset` |
+| `plugin-version`, `requires` | versión de la app y requisitos que declara |
+
+El detalle, campo por campo, está en [descriptor y describe()](/0.2/apps/descriptor/).
+
+## Dónde vive
+
+El host busca componentes en `[apps] wasm_dir` (por defecto `./plugins`) y acepta
+dos disposiciones. La plana gana cuando existen las dos:
+
+```text
+plugins/
+  mi-app.wasm          # componente suelto — tiene prioridad
+  mi-app/
+    mi-app.wasm        # el componente dentro de su propio mundo
+    customizations/
+    data/
+    files/
+    secrets/
+```
+
+El **nombre de la app** es el nombre del fichero sin `.wasm`. Se publica en
+`/plugins/<app>`, da nombre a sus espacios de URL propios y a su mundo. Un nombre
+con puntos, barras o espacios no es válido: no se sanea, se rechaza.
+
+## Qué obtiene
+
+Una app cargada consigue, sin configurar nada:
+
+* **DocTypes** con lista y formulario en el Desk, y su API en
+  `/api/resource/<doctype>`;
+* **rutas** propias en `/plugins/<app>/*`, `/api/plugins/<app>/*` y
+  `/desk/<app>/*`, más las que declare con `path`;
+* **métodos** en `/api/method/<name>`;
+* **ciclo de vida** sobre los DocTypes que declara;
+* **un mundo** en disco, `plugins/<app>/`, montado en `/world` con lectura y
+  escritura;
+* **capacidades** primordiales (rutas, HTTP saliente, document store, config,
+  schema, scheduler, notificaciones, pubsub, mundo) y las específicas que
+  declare;
+* **widgets, dashboards, workspaces y páginas** dentro del Desk.
+
+## El recorrido de una petición
+
+```text
+cliente
+  │  GET /plugins/mi-app/informes/2026
+  ▼
+host ── resuelve la app ── aplica la política ── limita el cuerpo
+  │
+  └─ handle-request("plugins", { path: "/informes/2026", … })
+        │
+        └─ la app responde { status, headers, body }
+```
+
+El host no interpreta tus rutas: te entrega el `route-id` que resolvió y el
+`path` que sigue al prefijo. Analizar el resto es tu trabajo.
+
+## Los assets son código de confianza
+
+`ui-asset` devuelve bytes que el navegador ejecuta **en el mismo origen** que el
+Desk. Ese JavaScript puede leer el DOM, usar la cookie de sesión y llamar a
+`/api/*` como el usuario. El sandbox cubre los imports del componente, **no** el
+JavaScript que la app pide ejecutar al navegador.
+
+:::caution[Instalar una app es confiar en su UI]
+Sirve scripts propios solo desde una app que controlas. El host lo advierte en el
+log al arrancar y sirve los assets con el origen del Desk a propósito.
+:::
+
+## Mapa de esta sección
+
+| Página | Qué resuelve |
+|---|---|
+| [Primeros pasos](/0.2/apps/getting-started/) | del WIT a un componente cargado |
+| [El contrato WIT](/0.2/apps/wit/) | world, interfaces, tipos y compatibilidad |
+| [descriptor](/0.2/apps/descriptor/) | qué declara `describe()`, campo por campo |
+| [Capacidades](/0.2/apps/capacidades/) | primordiales, específicas y `permission-denied` |
+| [Ciclo de vida](/0.2/apps/ciclo-de-vida/) | eventos, orden, abortos y `write-disposition` |
+| [Mundo, rutas y métodos](/0.2/apps/mundo-y-rutas/) | `/world`, namespaces y cadena de métodos |
+| [Documentos](/0.2/apps/data/) | leer, escribir, listar, contar y agregar |
+| [UI extensions](/0.2/apps/ui-extensions/) | slots, widgets, dashboards y website |
+| [Construir](/0.2/apps/building/) | comandos exactos por toolchain |
+| [Distribuir](/0.2/apps/distribution/) | empaquetado, versión, actualización y rollback |
+| [Lenguajes](/0.2/apps/languages/) | comparativa y guía por lenguaje |
+| [Depuración](/0.2/apps/depuracion/) | logs, endpoints y checklist de aislamiento |

@@ -1,0 +1,205 @@
+/* Markdown prose.
+ *
+ * Starlight renders the content; these rules give it the Ferris surface:
+ * tinted inline code, framed code blocks, scrollable tables, card-like
+ * collapsibles and one accent for cards and link cards.
+ *
+ * Rules that merely repeat a Starlight default are omitted on purpose. What
+ * remains changes the surface, the state or the rhythm — not the structure.
+ */
+
+/* ---- Inline code -------------------------------------------------------- */
+
+.sl-markdown-content code:not(:where(.not-content *)) {
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem;
+  background-color: var(--ferris-surface-hover);
+  color: var(--sl-color-white);
+  font-weight: 500;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* ---- Code blocks -------------------------------------------------------- */
+
+.sl-markdown-content .expressive-code {
+  margin-block: 1.25rem;
+}
+
+.sl-markdown-content .expressive-code .frame {
+  border-radius: var(--ferris-radius);
+  box-shadow: var(--ferris-shadow-soft);
+}
+
+.sl-markdown-content .expressive-code .frame .header {
+  border-block-end: 1px solid var(--sl-color-hairline);
+}
+
+.sl-markdown-content .expressive-code .copy button {
+  border-radius: 0.4rem;
+}
+
+/* A plain `pre` (for example inside a component) still gets the frame. */
+.sl-markdown-content pre:not(:where(.expressive-code *)) {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--ferris-radius);
+  box-shadow: var(--ferris-shadow-soft);
+}
+
+/* ---- Tables ------------------------------------------------------------- */
+
+.sl-markdown-content table:not(:where(.not-content *)) {
+  /* Starlight makes the table a block so it can scroll. Keep the block box and
+   * the scroll: `overflow: hidden` used to clip the last columns on mobile. */
+  display: block;
+  max-inline-size: 100%;
+  overflow: auto;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--ferris-radius);
+  border-spacing: 0;
+  background-color: var(--sl-color-bg);
+}
+
+.sl-markdown-content :is(th, td):not(:where(.not-content *)) {
+  border-block-end: 1px solid var(--sl-color-hairline-light);
+}
+
+.sl-markdown-content thead:not(:where(.not-content *)) {
+  background-color: var(--ferris-surface-subtle);
+}
+
+.sl-markdown-content th:not(:where(.not-content *)) {
+  font-weight: 600;
+}
+
+/* The first column is an identifier or a page name in every reference table.
+ * Keeping it on one line avoids ugly breaks like `/llms-` / `full.txt`; the
+ * table itself scrolls horizontally when the sum of the columns is wider than
+ * the content pane. */
+.sl-markdown-content :is(th, td):first-child:not(:where(.not-content *)) {
+  white-space: nowrap;
+}
+
+.sl-markdown-content tbody tr:nth-child(even):not(:where(.not-content *)) {
+  background-color: color-mix(in oklab, var(--sl-color-bg-sidebar) 55%, transparent);
+}
+
+.sl-markdown-content tbody tr:last-child td:not(:where(.not-content *)) {
+  border-block-end: 0;
+}
+
+@media (hover: hover) {
+  .sl-markdown-content tbody tr:hover:not(:where(.not-content *)) {
+    background-color: var(--ferris-surface-hover);
+  }
+}
+
+/* ---- Asides, quotes and collapsibles ----------------------------------- */
+
+.starlight-aside {
+  border-inline-start-width: 3px;
+  border-radius: var(--ferris-radius);
+}
+
+.starlight-aside__title {
+  font-size: var(--sl-text-body);
+  letter-spacing: 0.01em;
+}
+
+.sl-markdown-content blockquote:not(:where(.not-content *)) {
+  padding-inline-start: 1rem;
+  border-inline-start: 3px solid var(--ferris-border-accent);
+  color: var(--sl-color-gray-2);
+}
+
+.sl-markdown-content details:not(:where(.not-content *)) {
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--ferris-radius-sm);
+  background-color: color-mix(in oklab, var(--sl-color-bg-sidebar) 55%, transparent);
+}
+
+@media (hover: hover) {
+  .sl-markdown-content details:hover:not([open]):not(:where(.not-content *)) {
+    border-color: var(--ferris-border-hover);
+  }
+}
+
+.sl-markdown-content summary:not(:where(.not-content *)) {
+  font-weight: 600;
+}
+
+.sl-markdown-content kbd:not(:where(.not-content *)) {
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-block-end-width: 2px;
+  border-radius: 0.35rem;
+  background-color: var(--sl-color-bg-sidebar);
+  font-size: 0.85em;
+}
+
+/* ---- Cards and link cards ---------------------------------------------- */
+
+.card,
+.sl-link-card {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--ferris-radius);
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--sl-color-bg-sidebar) 55%, transparent), transparent),
+    var(--sl-color-bg);
+  transition:
+    border-color var(--ferris-transition),
+    transform var(--ferris-transition),
+    box-shadow var(--ferris-transition);
+}
+
+/* One accent for every card icon chip. Starlight rotates four palette colours
+ * per grid position; the brand language here is a single teal accent, so the
+ * chip and its glyph stay in step instead of mixing green with orange. */
+.card {
+  --sl-card-border: var(--ferris-border-accent);
+  --sl-card-bg: var(--ferris-surface-active);
+}
+
+.card .icon {
+  color: var(--sl-color-accent-high);
+}
+
+/* Card links are short labels followed by an arrow (`Instalación →`). Keeping
+ * them on one line prevents the arrow from being orphaned on a second line. */
+.card .body a {
+  white-space: nowrap;
+}
+
+.card:focus-within,
+.sl-link-card:focus-within {
+  outline: var(--ferris-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The card already paints the focus ring; ring the inner link too and the
+ * result is a double outline. The card is the effective target, so suppress
+ * the descendant one only while it lives inside a card. */
+.card :is(a, button):focus-visible,
+.sl-link-card a:focus-visible {
+  outline: none;
+}
+
+@media (hover: hover) {
+  /* A plain Card is not interactive: highlight its edge, do not fake a click
+   * target. Only a LinkCard, which is a link, lifts. */
+  .card:hover {
+    border-color: var(--ferris-border-hover);
+  }
+
+  .sl-link-card:hover {
+    border-color: var(--ferris-border-hover);
+    box-shadow: var(--ferris-shadow);
+    transform: translateY(-2px);
+  }
+
+  .sl-link-card:hover .title {
+    color: var(--sl-color-accent-high);
+  }
+}
