@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build
+    name: Build site
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -37,7 +37,7 @@ jobs:
           path: dist
 
   deploy:
-    name: Deploy
+    name: Deploy site
     needs: build
     runs-on: ubuntu-latest
     environment:
