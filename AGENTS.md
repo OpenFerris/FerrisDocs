@@ -192,7 +192,7 @@ Same branch layout as FerrisCore and FerrisFramework:
 | `hotfix/*` | Urgent patch from `master`; merged into `master` and `develop`. |
 
 - Protected branches: direct pushes to `master` and `develop` are disabled; a PR
-  and the `Docs` CI workflow are required.
+  and the `Docs` CI workflow are required. The required check is `Check docs`.
 - Commit subjects: `feat(scope): …`, `fix(scope): …`, `docs(…): …`,
   `refactor(…): …`, `wip: …`.
 - **GitHub Pages deploys from `master`** (and `workflow_dispatch`) through
