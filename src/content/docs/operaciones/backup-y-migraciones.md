@@ -13,7 +13,7 @@ adjuntos, customizaciones o credenciales.
 |---|---|---|
 | Base de datos | PostgreSQL, MySQL o SQLite | Volcado lógico o snapshot del volumen. |
 | Ficheros | `FERRIS_FILES_DIR` o el store de objetos | Copia del prefijo/volumen o versionado del bucket. |
-| Mundos de apps | `plugins/<app>/` | Copia del directorio completo. |
+| Mundos de apps | `<wasm_dir>/<app>/` (`apps/<app>/` en un bench, `sites/<site>/plugins/<app>/` en un sitio) | Copia del directorio completo. |
 | Clave de secretos | `[secrets] key` / `FERRIS_SECRET_KEY` | Gestor de secretos, **fuera** del backup de la base. |
 | Configuración | `config/ferris.toml` | Junto al despliegue, sin credenciales si se versiona. |
 
@@ -118,9 +118,10 @@ está en el backup de `plugins/` y no se recreará en una base nueva.
 8. **Verificación**: `ferris doctor`, `/health`, abrir un documento con adjunto y
    un campo `Secret`.
 
-El paso 7 es el que aplica `plugins/<app>/customizations/*.json` sobre la base
+El paso 7 es el que aplica `<wasm_dir>/<app>/customizations/*.json` sobre la base
 restaurada. En una base nueva, es lo que devuelve los Custom Fields y Property
-Setters al estado que la app declara.
+Setters al estado que la app declara. En un despliegue con sitios, usa
+`ferris site migrate <site>` para cada uno.
 
 ```bash
 ferris migrate --dry-run
@@ -193,6 +194,7 @@ aplicándose.
 ## Retención
 
 No hay retención automática. Define una política para los volcados de base de
-datos, el store de ficheros y el versionado del bucket, `plugins/` antes de cada
-despliegue, las claves de secretos anteriores (hasta reescribir todas las filas)
-y `Path Log`/`Error Log`, que crecen sin límite.
+datos, el store de ficheros y el versionado del bucket, los mundos de apps
+(`apps/<app>/` en un bench, `sites/<site>/plugins/<app>/` en un sitio) antes de
+cada despliegue, las claves de secretos anteriores (hasta reescribir todas las
+filas) y `Path Log`/`Error Log`, que crecen sin límite.

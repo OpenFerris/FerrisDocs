@@ -150,7 +150,8 @@ para personalizarse en el sitio, no una regla de permisos.
 ### Export a un mundo de plugin
 
 `POST /api/customization/{doctype}/export` escribe los cambios seleccionados como
-`plugins/<app>/customizations/<doctype>.json`, con esta forma:
+`<mundo>/customizations/<doctype>.json` (en un bench,
+`apps/<app>/customizations/…`), con esta forma:
 
 ```json
 { "doctype": "Task",

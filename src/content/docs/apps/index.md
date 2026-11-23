@@ -58,8 +58,13 @@ El detalle, campo por campo, está en [descriptor y describe()](/apps/descriptor
 
 ## Dónde vive
 
-El host busca componentes en `[apps] wasm_dir` (por defecto `./plugins`) y acepta
-dos disposiciones. La plana gana cuando existen las dos:
+En un bench, el **catálogo global** está en `apps/`: `ferris build` deja allí el
+paquete (`<app>.wasm`, `plugin.toml`, `world/` y `assets/`) y `ferris site
+install-app` lo copia a un sitio. El host lee los componentes de
+`[apps] wasm_dir`, que en el bench es `"apps"`.
+
+Un `--standalone` conserva el layout plano, y el host acepta las dos
+disposiciones. La plana gana cuando existen las dos:
 
 ```text
 plugins/
@@ -82,32 +87,38 @@ Una app cargada consigue, sin configurar nada:
 
 - **DocTypes** con lista y formulario en el Desk, y su API en
   `/api/resource/<doctype>`;
-- **rutas** propias en `/plugins/<app>/*`, `/api/plugins/<app>/*` y
-  `/desk/<app>/*`, más las que declare con `path`;
+- **rutas** propias en la raíz, en el `path` que declare, más
+  `/api/plugins/<app>/*` y `/desk/<app>/*`;
 - **métodos** en `/api/method/<name>`;
 - **ciclo de vida** sobre los DocTypes que declara;
-- **un mundo** en disco, `plugins/<app>/`, montado en `/world` con lectura y
+- **un mundo** en disco, `<wasm_dir>/<app>/`, montado en `/world` con lectura y
   escritura;
 - **capacidades** primordiales (rutas, HTTP saliente, document store, config,
   schema, scheduler, notificaciones, pubsub, mundo) y las específicas que
   declare;
 - **widgets, dashboards, workspaces y páginas** dentro del Desk.
 
+`/plugins/<app>/*` (el reenvío directo al guest) solo existe en `ferris dev`; en
+producción se sirven el descriptor, los assets y los widgets. La entrada es la
+ruta declarada o `/api/plugins/<app>/*`.
+
 ## El recorrido de una petición
 
 ```text
 cliente
-  │  GET /plugins/mi-app/informes/2026
+  │  GET /api/plugins/mi-app/informes/2026
   ▼
 host ── resuelve la app ── aplica la política ── limita el cuerpo
   │
-  └─ handle-request("plugins", { path: "/informes/2026", … })
+  └─ handle-request("api", { path: "/informes/2026", … })
         │
         └─ la app responde { status, headers, body }
 ```
 
 El host no interpreta tus rutas: te entrega el `route-id` que resolvió y el
-`path` que sigue al prefijo. Analizar el resto es tu trabajo.
+`path` que sigue al prefijo. Analizar el resto es tu trabajo. Si la ruta está
+declarada en `describe().routes`, el `route-id` es el `id` de esa ruta y el host
+la monta en la raíz, con su `auth` y su límite.
 
 ## Los assets son código de confianza
 

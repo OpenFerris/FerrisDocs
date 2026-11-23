@@ -10,20 +10,24 @@ el WIT y no hay intérprete embebido.
 
 ```bash
 ferris new mi-app
-cd mi-app
+ferris dev --app mi-app      # desde la raíz del bench
 ```
 
-El scaffold crea:
+El scaffold crea el bench y la app:
 
 ```text
-mi-app/
-  .cargo/config.toml     # target = wasm32-wasip2
-  Cargo.toml             # cdylib + wit-bindgen 0.62
-  rust-toolchain.toml    # canal y target fijados
-  wit/ferris.wit         # copia del contrato
-  src/lib.rs             # describe + exports del world
-  config/ferris.toml     # [apps] wasm_dir = "plugins"
+bench/
+  config/ferris.toml       # [apps] wasm_dir = "apps"
+  apps/mi-app/
+    .cargo/config.toml     # target = wasm32-wasip2
+    Cargo.toml             # cdylib + wit-bindgen 0.62
+    rust-toolchain.toml    # canal y target fijados
+    wit/ferris.wit         # copia del contrato
+    src/lib.rs             # describe + exports del world
 ```
+
+Con `ferris new --standalone mi-app` obtienes el layout antiguo
+(`mi-app/config/ferris.toml`, `wasm_dir = "plugins"`).
 
 `ferris new` es opcional: puedes montar el proyecto a mano. Lo que no es
 opcional es el WIT exacto.
@@ -194,12 +198,12 @@ cargo build --target wasm32-wasip2 --release
 ```
 
 Salida: `target/wasm32-wasip2/release/<nombre_del_crate>.wasm`. El crate usa
-guiones bajos (`mi-app` → `mi_app.wasm`); la app se llama como el fichero que
-dejes en `plugins/`.
+guiones bajos (`mi-app` → `mi_app.wasm`); la app se llama como el paquete que
+publiques.
 
 ```bash
-ferris dev            # desarrolla: compila, carga y recarga al cambiar
-ferris build          # produce plugins/<paquete>.wasm para distribuir
+ferris dev --app mi-app    # desarrolla: compila, carga y recarga al cambiar
+ferris build --app mi-app  # paquete de catálogo en apps/mi-app/
 ```
 
 No necesitas `ferris build` antes de `ferris dev`: el servidor de desarrollo

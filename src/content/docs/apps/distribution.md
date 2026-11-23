@@ -1,57 +1,89 @@
 ---
 title: Distribuir una app
-description: "Empaquetado del componente y su mundo, versión, configuración [apps], secretos del operador, actualización atómica y rollback."
+description: Empaquetado en el catálogo apps/, versión fijada por sitio, actualización con --force, rollback y qué no se distribuye.
 ---
 
-Distribuir una app son dos cosas: un componente `.wasm` y, si la app lo usa, su
-**mundo**. El host no instala nada: lee un directorio al arrancar.
+Distribuir una app son dos cosas: un componente `.wasm` con su manifest y, si la
+app lo usa, su **plantilla de mundo**. En un bench, `ferris build` produce el
+paquete y `ferris site install-app` lo copia a cada sitio. El host no instala
+nada desde un registro: lee el directorio que `[apps] wasm_dir` nombra.
 
 ## El paquete
 
 ```text
-plugins/
-  mi-app.wasm            # el componente (obligatorio)
-  mi-app/
-    mi-app.wasm          # alternativa: el componente dentro del mundo
-    customizations/      # personalizaciones exportadas
-    data/                # datos propios
-    files/               # blobs
-    secrets/             # material secreto de la app
+apps/mi-app/                 # catálogo global
+├── mi-app.wasm              # el componente (obligatorio)
+├── plugin.toml              # name + version + [config]
+├── world/                   # PLANTILLA que se copia al sitio
+│   ├── customizations/
+│   ├── data/
+│   ├── files/
+│   └── secrets/
+└── assets/                  # assets de UI
 ```
 
-Se aceptan las dos disposiciones y la **plana gana** cuando existen las dos, para
-que una copia vieja dentro del mundo nunca eclipse un build nuevo. El
-descubrimiento es de un solo nivel: nada más profundo se escanea.
+`ferris build --app mi-app` escribe este paquete junto a las fuentes. Un
+`.wasm` suelto también se acepta en `ferris app install`; se envuelve en un
+paquete mínimo con versión `0.1.0` y un `world/` vacío.
+
+El layout plano (`plugins/mi-app.wasm` + `plugins/mi-app/`) sigue siendo válido
+para un `--standalone`: el fichero plano gana si existen los dos, para que una
+copia vieja dentro del mundo nunca eclipse un build nuevo. El descubrimiento es
+de un solo nivel.
 
 El nombre de la app es el nombre del fichero sin `.wasm`. Debe ser único y válido
 (letras ASCII, dígitos, `-`, `_`; hasta 64 caracteres). Cambiar el nombre del
-fichero cambia la app: sus URLs, su mundo y su configuración dejan de casar.
+paquete cambia la app: sus URLs, su mundo y su configuración dejan de casar.
 
 ## Versión
 
-Declara `plugin-version` en `describe()`:
+Hay dos números y no son lo mismo:
+
+| Dónde | Qué es |
+|---|---|
+| `plugin.toml` → `version` | La versión del **paquete** en el catálogo. `ferris build` escribe `0.1.0` si el manifest no existe; edítalo al subir la versión. |
+| `site_config.json` → `app_versions` | La versión que **ese sitio** instaló, capturada al copiar su componente. |
+| `describe().plugin-version` | La versión que el componente declara en caliente; aparece en `GET /plugins/<app>`. |
+
+Una actualización que olvida subir `plugin.toml` convierte el diagnóstico en una
+adivinanza, y `site info` mostrará la versión antigua. No hay un campo de
+compatibilidad separado: la compatibilidad la impone el `package` del WIT. Un
+componente compilado contra un paquete incompatible no instancia; recompílalo con
+el `ferris.wit` del host.
+
+## La instancia es una copia
+
+`ferris site install-app` copia el componente a
+`sites/<site>/plugins/<app>/<app>.wasm` y registra la versión en
+`site_config.json`. No es un symlink: el sitio fija lo que instaló.
+
+- Reemplazar `apps/<app>/<app>.wasm` con un build nuevo **no** cambia lo que
+  sirve un sitio ya instalado.
+- `ferris site install-app <app> --site <site> --force` es la única operación
+  que copia la versión nueva y actualiza `app_versions`.
+- En una actualización, `secrets/` no se copia, `data/` y `files/` no se tocan y
+  `config.toml` se fusiona. `customizations/` sí se reemplaza porque es la salida
+  de la plantilla.
+
+Antes de publicar, tanto `ferris app install` como `ferris site install-app`
+**instancian** el componente contra el host en memoria. Un `.wasm` incompatible
+con este binario falla en el comando, antes de tocar el catálogo o el sitio:
 
 ```text
-plugin-version: "1.4.2"
+`…/mi-app.wasm` is not compatible with this ferris binary; rebuild it against
+`wit/ferris.wit` from the same release
 ```
-
-Aparece en `GET /plugins/<app>` y es lo que te dice qué binario está cargado
-cuando algo no cuadra. Una actualización que olvida subirla convierte el
-diagnóstico en una adivinanza.
-
-No hay un campo de compatibilidad separado: la compatibilidad la impone el
-`package` del WIT. Un componente compilado contra un paquete incompatible no
-instancia; recompílalo con el `ferris.wit` del host.
 
 ## Configuración del host
 
 ```toml
 [apps]
-wasm_dir = "plugins"
+wasm_dir = "apps"
 enabled = []
 ```
 
-- `wasm_dir` es el directorio; por defecto `./plugins`.
+- `wasm_dir` es el directorio; en el bench, `apps/`; en un `--standalone`,
+  `plugins/`.
 - `enabled` vacío significa «todas las que encuentre». Con nombres, es una lista
   de permitidos y un nombre sin fichero es un **error de arranque**.
 
@@ -65,7 +97,7 @@ mi-app = 8444
 ```
 
 Un puerto no puede llevar dos certificados: dos apps con `tls-server` necesitan
-entradas distintas.
+entradas distintas. El detalle está en [Apps](/configuracion/apps/).
 
 ## Customizations
 
@@ -79,12 +111,42 @@ Content-Type: application/json
 { "app": "mi-app" }
 ```
 
-Quedan en `plugins/mi-app/customizations/Nota.json`. El host los aplica en
-`ferris migrate` (con upsert), no al arrancar: una edición del Desk no exportada
-no se revierte por reiniciar el proceso.
+Quedan en `<mundo>/customizations/Nota.json`; en un bench,
+`apps/mi-app/customizations/Nota.json`. `ferris build` los copia a
+`apps/mi-app/world/customizations/`, de modo que viajan en el paquete. El host
+los aplica en `ferris migrate` (con upsert), no al arrancar.
 
-Al empaquetar, incluye `customizations/` si la app depende de ellos. Al
-actualizar, vuelve a ejecutar `ferris migrate`.
+Al actualizar una app en un sitio, vuelve a ejecutar `ferris site migrate
+<site>`: aplica las customizaciones de las instancias de ese sitio.
+
+## Permisos (`docperm.toml`)
+
+El descriptor de una app declara DocTypes, pero no reglas de acceso. Para que
+los permisos viajen con el paquete, pon un `docperm.toml` junto a
+`plugin.toml`:
+
+```toml
+[[permissions]]
+doctype = "Task"
+role = "System Manager"
+read = true
+write = true
+create = true
+delete = true
+
+[[permissions]]
+doctype = "Task"
+role = "All"       # todos los visitantes, incluidos los anónimos
+read = true
+```
+
+Los derechos que no nombres valen `false`; `All` es el rol especial que el
+motor traduce a «todo el mundo». `ferris site install-app` aplica el fichero a
+la **base de datos de ese sitio** con upsert, así que reinstalar es idempotente
+y quitar una entrada del fichero no revoca el permiso ya concedido: revocar es
+una acción explícita del operador (`ferris role-permissions delete`).
+`ferris build` deja el fichero en el paquete y `ferris app install` también lo
+copia al catálogo.
 
 ## Secretos y configuración del operador
 
@@ -95,8 +157,7 @@ actualizar, vuelve a ejecutar `ferris migrate`.
 | `/world/secrets/` | la app | sus propios secretos |
 
 Una clave declarada `secret` no se puede leer ni escribir desde el guest; el
-operador la aprovisiona fuera de banda en el almacén de configuración de la app y
-el guest nunca ve su valor.
+operador la aprovisiona fuera de banda y el guest nunca ve su valor.
 
 :::danger[No metas secretos en el `.wasm`]
 Un `pem(...)` inline viaja dentro del componente y, aunque el host lo redacte en
@@ -105,61 +166,56 @@ las proyecciones, cualquiera con el fichero lo tiene. Usa
 sin recompilar.
 :::
 
-Si el proyecto es el scaffold de Ferris, `ferris deploy` con `--target binary` y
-`--to <dir>` copia la app y `config/`; en otros lenguajes, copia tú el
-componente y el mundo. El resultado es el mismo.
+## Actualización y rollback
 
-## Actualización atómica
-
-El host carga los componentes al arrancar. Para no dejar una app a medio
-escribir:
+El orden que no deja un sitio a medias:
 
 ```bash
-cp mi-app.wasm plugins/.mi-app.wasm.new
-mv plugins/.mi-app.wasm.new plugins/mi-app.wasm   # mismo directorio: rename atómico
+# 1. construye la versión nueva en el catálogo
+ferris build --app mi-app
+
+# 2. actualiza cada sitio que la tenga
+ferris site install-app mi-app --site acme --force
+ferris site migrate acme
+
+# 3. comprueba la versión servida
+ferris site info acme            # versions: mi-app=<versión>
+curl -s localhost:8000/plugins/mi-app | jq '.plugin_version'
 ```
 
-- escribe el temporal **en el mismo directorio** (un `mv` entre sistemas de
-  ficheros no es atómico);
-- no borres el fichero anterior antes de tener el nuevo en su sitio;
-- reinicia el host (o usa `ferris dev --hot-reload app` en desarrollo) para que
-  el componente nuevo se instancie y se llame su `describe()`;
-- comprueba `/plugins/<app>` y la versión antes de dar la actualización por buena.
-
-En desarrollo, `ferris dev --hot-reload app` recompila el proyecto y sustituye la
-instancia; re-registra DocTypes, eventos y métodos. Una **ruta nueva** sigue
-necesitando reinicio, y un cambio de configuración del host también.
-
-## Rollback
-
-Guarda la versión anterior **fuera** de `plugins/` (o con otro nombre que no
-termine en `.wasm`, para que el descubrimiento no la publique):
+Guardar la versión anterior **fuera** del catálogo evita que el descubrimiento la
+publique por accidente. Un directorio `releases/` con paquetes completos es
+suficiente:
 
 ```text
 releases/
-  mi-app-1.4.1.wasm
-  mi-app-1.4.2.wasm
+  mi-app-1.4.1/
+  mi-app-1.4.2/
 ```
 
 Para volver:
 
 ```bash
-cp releases/mi-app-1.4.1.wasm plugins/.mi-app.wasm.new
-mv plugins/.mi-app.wasm.new plugins/mi-app.wasm
-# reiniciar y comprobar /plugins/mi-app
+ferris app install releases/mi-app-1.4.1
+ferris site install-app mi-app --site acme --force
+# reiniciar y comprobar la versión
 ```
 
-El mundo (`plugins/mi-app/`) no se toca al revertir el componente. Si la versión
-nueva migró datos propios en `data/`, revertir el binario no revierte esos datos:
-por eso conviene versionar también el formato de lo que escribes ahí.
+El mundo del sitio (`sites/<site>/plugins/mi-app/`) no se toca al revertir el
+componente. Si la versión nueva migró datos propios en `data/`, revertir el
+binario no revierte esos datos: versiona también el formato de lo que escribes
+ahí.
+
+`ferris app remove <app>` se niega mientras algún sitio la tenga instalada:
+primero `ferris site uninstall-app <app> --site <site>` en cada uno.
 
 ## Checklist de publicación
 
-- [ ] el `.wasm` valida e importa `ferris:framework/*@0.3.0`;
-- [ ] el nombre del fichero es el nombre definitivo de la app;
-- [ ] `plugin-version` está actualizado;
+- [ ] el `.wasm` valida e importa el `ferris:framework` del host;
+- [ ] el nombre del paquete es el nombre definitivo de la app;
+- [ ] `plugin.toml` tiene la versión nueva;
+- [ ] el paquete incluye `world/` y `assets/` cuando la app los usa;
 - [ ] `enabled` incluye la app si el host usa lista de permitidos;
-- [ ] el mundo existe con sus cuatro subcarpetas y los permisos correctos;
 - [ ] `customizations/` está incluido si la app los necesita;
 - [ ] los secretos están en `/world/secrets/` o en claves `secret` del operador,
       nunca en el binario;
@@ -177,5 +233,5 @@ por eso conviene versionar también el formato de lo que escribes ahí.
 - claves privadas fuera de `secrets/` (y `secrets/` nunca se sirve por HTTP);
 - una copia del mundo con datos de desarrollo si la app espera partir de cero.
 
-La regla práctica: publica el componente, el esquema de configuración y lo que
-la app necesita para arrancar; deja fuera todo lo que se regenera.
+La regla práctica: publica el componente, el manifest, la plantilla del mundo y
+lo que la app necesita para arrancar; deja fuera todo lo que se regenera.

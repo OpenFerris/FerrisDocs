@@ -1,23 +1,23 @@
 ---
 title: Apps
-description: Componentes WASM, descubrimiento en plugins/, mundo de la app y customizaciones aplicadas en migrate.
+description: Componentes WASM en el catálogo apps/ o en plugins/, su mundo, las rutas que publica el host y las customizaciones.
 ---
 
 Una **app** de Ferris es un componente WebAssembly que declara DocTypes, rutas,
 widgets, dashboards y métodos desde `describe()`. Implementa el contrato
-`ferris:framework@0.3.0` (ver [El contrato WIT](/apps/wit/)). El servidor lo
-descubre en disco, lo publica y lo aísla en su propio directorio, llamado
-**mundo**.
+`ferris:framework@<version>` del host (ver [El contrato WIT](/apps/wit/)). El
+servidor lo descubre en disco, lo publica y lo aísla en su propio directorio,
+llamado **mundo**.
 
 ```toml
 [apps]
-wasm_dir = "plugins"
-enabled = ["facturacion"]
+wasm_dir = "apps"        # bench; un --standalone usa "plugins"
+enabled = []
 ```
 
 | Clave | Por defecto | Qué hace |
 |---|---|---|
-| `wasm_dir` | `"./plugins"` | Directorio del que se leen los componentes. |
+| `wasm_dir` | `"./plugins"` | Directorio del que se leen los componentes. El scaffold de bench escribe `"apps"`. |
 | `enabled` | `[]` | Lista blanca de apps; vacío significa "todas las del directorio". |
 | `plugin_tls_port` | sin definir | Puerto para rutas `tls-server` de una app. |
 | `plugin_tls_ports` | `{}` | Puerto por app, con prioridad sobre el anterior. |
@@ -26,13 +26,25 @@ Una app listada en `enabled` sin componente es un **error de arranque**. Una app
 que el operador pidió y desaparece en silencio es peor que un servidor que se
 niega a levantar.
 
-`wasm_dir` relativo se resuelve contra el proyecto (`--dir` o el directorio de
-trabajo). `FERRIS_PLUGINS_DIR` puede mover los mundos fuera del proyecto; el
-directorio de componentes sigue siendo `wasm_dir`.
+`wasm_dir` relativo se resuelve contra la raíz del bench (o contra el directorio
+de la app en un `--standalone`). `FERRIS_PLUGINS_DIR` puede mover los mundos
+fuera del proyecto; el directorio de componentes sigue siendo `wasm_dir`.
 
-## Descubrimiento
+## Dos catálogos, dos layouts
 
-Se aceptan dos layouts, y solo uno se escanea en profundidad:
+El **catálogo global** de un bench es `apps/`; cada subdirectorio es un paquete
+listo para instalar en un sitio:
+
+```text
+apps/
+└── facturacion/
+    ├── facturacion.wasm    # el componente
+    ├── plugin.toml         # name + version + [config]
+    ├── world/              # plantilla: customizations, data, files, secrets
+    └── assets/
+```
+
+El layout **plano** sigue funcionando, y es el de un `--standalone`:
 
 ```text
 plugins/
@@ -50,15 +62,17 @@ plugins/
 - `plugins/<app>/<app>.wasm` permite publicar el mundo completo como una unidad.
 - Nada más profundo se escanea: `customizations/`, `files/` o `secrets/` no se
   confunden con apps.
-- `plugins/<app>.wasm` y `plugins/<app>/<app>.wasm` se descubren como la misma
-  app; el plano gana.
+
+Con `wasm_dir = "apps"`, el descubrimiento encuentra
+`apps/<app>/<app>.wasm`: el paquete de catálogo. La app se publica en el host
+igual que en el layout plano, pero además puede copiarse a un sitio con su
+versión fijada. Ver [Sitios](/configuracion/sites/).
 
 ```bash
-ferris build                    # compila a wasm32-wasip2 y escribe plugins/<name>.wasm
-ferris build --profile dev      # perfil de desarrollo
-ferris app install ruta/al/app.wasm   # copia, crea el mundo y habilita
-ferris app list                       # qué hay y qué se publica
-ferris app disable facturacion        # deja de cargarse al reiniciar
+ferris build --app billing             # apps/billing/billing.wasm + plugin.toml + world/
+ferris app install ruta/al/paquete     # publica en el catálogo global
+ferris site install-app billing --site acme
+ferris app list                        # qué hay en el catálogo y en qué sitios
 ```
 
 El nombre debe ser un identificador de crate: letras ASCII, dígitos, `-` y `_`,
@@ -67,7 +81,7 @@ en componente de ruta.
 
 ## El mundo
 
-Cada app habilitada posee `plugins/<app>/` con cuatro subdirectorios fijos:
+Cada app habilitada posee `<wasm_dir>/<app>/` con cuatro subdirectorios fijos:
 
 | Directorio | Contenido |
 |---|---|
@@ -76,7 +90,9 @@ Cada app habilitada posee `plugins/<app>/` con cuatro subdirectorios fijos:
 | `files/` | Blobs que adjunta. |
 | `secrets/` | Material sensible; nunca se sirve por HTTP. |
 
-El CLI crea la estructura al arrancar `serve`, `run` y `dev`. El guest la ve
+En un bench el mundo es `apps/<app>/`; en un sitio instalado,
+`sites/<site>/plugins/<app>/`; en un `--standalone`, `plugins/<app>/`. El CLI
+crea las cuatro carpetas al arrancar `serve`, `run` y `dev`. El guest la ve
 montada, lectura/escritura, en `/world` (rutas absolutas: WASI no tiene un
 directorio de trabajo global).
 
@@ -110,39 +126,50 @@ curl -X POST http://localhost:8000/api/customization/Invoice/export \
   -d '{"app": "facturacion"}'
 ```
 
-La ruta escribe `plugins/<app>/customizations/<doctype>.json`. El nombre del
-fichero se sanea, por eso el JSON lleva el `doctype` explícito: el stem no se
-puede revertir.
+La ruta escribe `<mundo>/customizations/<doctype>.json`. El nombre del fichero se
+sanea, por eso el JSON lleva el `doctype` explícito: el stem no se puede
+revertir.
 
 `ferris migrate` lee `customizations/*.json` de cada mundo habilitado y hace
 upsert en `tab_custom_field` / `tab_property_setter`. Es el modelo de fixtures de
-Frappe: la app es dueña del payload y la base de datos es una proyección.
+Frappe: la app es dueña del payload y la base de datos es una proyección. En un
+bench, `ferris build` copia esos JSON a `apps/<app>/world/customizations/` para
+que viajen en el paquete; un sitio los recibe al instalarlo.
 
 :::note
 La importación ocurre en **migrate**, no en cada arranque. Una edición hecha en
-el Desk después del último export no se revierte al reiniciar; el operador decide
-cuándo gana la copia de la app.
+el Desk después del último export no se revierte al reiniciar. Los upserts son
+idempotentes: ejecutar `ferris migrate` dos veces no duplica nada. Borrar un campo
+del JSON **no** borra la fila; eso es una acción explícita del Desk.
 :::
-
-Los upserts son idempotentes: ejecutar `ferris migrate` dos veces no duplica
-nada. Borrar un campo del JSON **no** borra la fila; eso es una acción explícita
-del Desk, no un efecto secundario de un redeploy.
 
 ## Rutas y métodos
 
 Con la feature `wasm`, el servidor publica:
 
-| Ruta | Función |
-|---|---|
-| `/plugins/{app}/*` | Reenvía la petición a `handle-request` del guest. |
-| `/plugins/{app}/asset/{*path}` | Assets estáticos de la app, same-origin. |
-| `/plugins/{app}/widget/{widget}` | Markup SSR de un widget declarado. |
-| `/api/plugins/{app}/{*rest}` | Superficie de API declarada por la app. |
-| `/api/method/{method}` | Método del registro; una app puede sustituir un base. |
+| Ruta | Función | ¿Producción? |
+|---|---|---|
+| Rutas declaradas (`path`) | `handle-request` con el `route-id` de la ruta. | Sí. |
+| `/plugins/{app}` | Descriptor proyectado de la app. | Sí. |
+| `/plugins/{app}/asset/{*path}` | Assets estáticos, same-origin. | Sí. |
+| `/plugins/{app}/widget/{widget}` | Markup SSR de un widget. | Sí. |
+| `/api/plugins/{app}/{*rest}` | Superficie de API declarada por la app. | Sí. |
+| `/plugins/{app}/{*rest}` | Reenvío directo al guest. | **Solo en `ferris dev`.** |
+| `/api/method/{method}` | Método del registro; una app puede sustituir uno base. | Sí. |
 
-Las rutas propias de la app son una capacidad **primordial**: no se configuran
-en `[apps]`. Tampoco hay `trusted`, listas de capacidades ni grants por app. Las
-capacidades específicas (egress que amplía un límite, TLS, streams, PKI y
+Las rutas que declara `describe()` se montan en la **raíz** del router y cada una
+lleva su método, su `auth` y su límite de cuerpo. `/` se rechaza: reclamaría todo
+el namespace. El scaffold declara `/apps/<app>` y un stream `/ws`.
+`/plugins/<app>/*` es una superficie de desarrollo con sesión opcional: en
+producción expondría el guest sin la política por ruta que sí aplican las rutas
+declaradas y `/api/plugins`, así que `serve` responde `404` ahí. La entrada de
+producción es la ruta declarada (por ejemplo `/apps/<app>`) o
+`/api/plugins/<app>/*`.
+
+El detalle de autorización, prefijos reservados y `%stream` está en
+[Mundo, rutas y métodos](/apps/mundo-y-rutas/).
+
+Las capacidades específicas (egress que amplía un límite, TLS, streams, PKI y
 `overrides`) se conceden al **declararlas** en `describe()`; el host las aplica y
 rechaza el import si no están.
 
@@ -167,13 +194,15 @@ reinicio. El reloj de épocas de wasmtime se arranca antes de ejecutar
 
 ```bash
 ferris serve
-ferris doctor      # estructura, config y target wasm
+ferris doctor      # layout, config, WIT y target wasm
 ferris info
 ```
 
-Si un componente no aparece:
+`doctor` comprueba, dentro de una app, que `wit/ferris.wit` declara la versión del
+host, y acepta tanto el layout de bench (`apps/` + `sites/`) como el de app
+(`src/` + `wit/`). Si un componente no aparece:
 
-1. comprueba que el fichero está en `plugins/` y termina en `.wasm`;
+1. comprueba que el fichero está en `wasm_dir` y termina en `.wasm`;
 2. comprueba `[apps] enabled` (una entrada sin fichero falla al arrancar);
 3. ejecuta `ferris build` y vuelve a mirar el nombre del paquete, no el del
    binario;

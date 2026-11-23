@@ -1,6 +1,6 @@
 ---
 title: ferris serve y ferris run
-description: Las dos formas de arrancar el servidor unificado —roles por flags o roles desde la configuración—, el gating de features y los errores de arranque.
+description: Roles por flags o configuración, arranque por sitio, el despachador --all-sites por Host y el gating de features.
 ---
 
 Los dos comandos arrancan **el mismo servidor**: un único puerto que sirve API,
@@ -8,15 +8,16 @@ Desk, realtime y los roles de fondo. La diferencia es de dónde salen los roles.
 
 | | `ferris serve` | `ferris run` |
 |---|---|---|
-| Roles | Flags (`--api`, `--web`, …) o `--all`. | `server.roles` de la configuración. |
+| Roles | Flags (`--api`, `--web`, …), `--all`, o `server.roles` si no hay flags. | `server.roles` de la configuración. |
 | Host y puerto | `--host` / `--port`, con `0.0.0.0:8000` por defecto. | `server.host` / `server.port`. |
-| Sin roles | Error con la lista de flags. | Error que nombra `config/ferris.toml`. |
+| Sitio | `--site <name>` o `--all-sites`. | `--site <name>`. |
 
 ## `ferris serve`
 
 ```bash
 ferris serve [--host HOST] [-p PORT] [--api] [--web] [--realtime]
              [--worker] [--scheduler] [--all] [--cors-origin ORIGIN]...
+             [--site NAME | --all-sites]
 ```
 
 | Flag | Efecto |
@@ -30,16 +31,20 @@ ferris serve [--host HOST] [-p PORT] [--api] [--web] [--realtime]
 | `--scheduler` | Planificador de trabajos periódicos. |
 | `--all` | Todos los roles compilados. |
 | `--cors-origin <ORIGIN>` | Origen permitido para CORS. Repetible. |
+| `--site <NAME>` | Sirve una instancia de `sites/<name>/`. |
+| `--all-sites` | Sirve todos los sitios habilitados y despacha por `Host`. No se combina con `--site` ni `--tenant`. |
+
+Sin ningún flag de rol, `serve` usa `[server] roles` del fichero, igual que
+`ferris run`. Solo falla si tampoco hay lista en la configuración:
+
+```text
+no roles selected: pass --all, one of --api/--web/--realtime/--worker/--scheduler,
+or list them in [server] roles
+```
 
 `--cors-origin` añade el origen a la lista del fichero y **activa** CORS: pasar
 al menos uno implica `enable_cors = true`. No hay modo comodín; un `*` en la
 lista se ignora con un aviso del servidor.
-
-Sin ningún rol seleccionado el comando no arranca nada:
-
-```text
-no roles selected: pass --all or at least one of --api/--web/--realtime/--worker/--scheduler
-```
 
 ## `ferris run`
 
@@ -54,19 +59,64 @@ roles = ["api", "web", "realtime"]
 ```
 
 Los nombres válidos son `api`, `web`, `realtime`, `worker`, `scheduler` y `all`,
-sin distinguir mayúsculas. Un nombre desconocido es un error que lista
-los aceptados. Una lista vacía también es un error, porque un servidor sin roles
-responde a todo con un proceso que parece vivo:
-
-```text
-no roles in server.roles: nothing would be enabled. Add e.g.
-roles = ["api", "web", "realtime"] to config/ferris.toml, or run
-`ferris serve --all` to pick them on the command line.
-```
+sin distinguir mayúsculas. Un nombre desconocido es un error que lista los
+aceptados. Una lista vacía también es un error, porque un servidor sin roles
+responde a todo con un proceso que parece vivo.
 
 Con un `config/ferris.toml` ausente, los valores por defecto incluyen
 `roles = ["all"]`, así que `ferris run` sin fichero intenta arrancar todos los
 roles.
+
+## Servir un sitio
+
+```bash
+ferris serve --site erp.example.com
+ferris run   --site erp.example.com
+ferris dev   --site erp.example.com
+```
+
+`--site` reescribe las rutas de datos del proceso **antes** de construir
+cualquier pool: base de datos, raíz de ficheros, Redis, `[apps] enabled`,
+`apps.wasm_dir` (que pasa a ser `sites/<site>/plugins`, el ámbito de instancia)
+y la política `[i18n]` del sitio. También instala su `host_name` en la lista
+blanca de `Host`: una petición con otro `Host` recibe `421 Misdirected Request`.
+Un sitio deshabilitado se rechaza al arrancar.
+
+Los flags de rol siguen siendo opcionales: sin ellos se usan los del fichero, así
+que `ferris serve --site acme` es un comando completo. `--site` y `--tenant` no
+se combinan; `--site` es el modelo con instancias de app.
+
+## `--all-sites`: un puerto, un proceso por sitio
+
+```bash
+ferris serve --all-sites --port 8000
+```
+
+Levanta **todos los sitios habilitados**, cada uno en un proceso hijo que escucha
+en loopback, y un despachador delante que elige el hijo por la cabecera `Host`.
+El registro de esquema es global, así que servir dos sitios en un mismo proceso
+dejaría que los DocTypes de una app de un sitio taparan los de otro. El modelo
+sigue siendo **un proceso por sitio**; lo que añade `--all-sites` es un único
+punto de entrada.
+
+- Un `Host` que no corresponde a ningún sitio responde `421 Misdirected
+  Request`, igual que un proceso de un solo sitio.
+- El despachador lee la cabecera de la petición y **empalma** la conexión TCP con
+  el hijo elegido. Por eso funcionan HTTP/1.1 con keep-alive y las upgrades de
+  WebSocket sin volver a implementar un proxy: una conexión queda ligada al
+  sitio de su primer `Host`.
+- **TLS debe terminar delante.** El despachador necesita el `Host` en claro; un
+  `ClientHello` TLS directo se rechaza con `400` y un mensaje que lo dice. Pon
+  el terminador TLS (proxy, balanceador o ingress) delante de este puerto.
+- Una conexión HTTP/2 con *prior knowledge* no se despacha: no lleva la petición
+  en texto claro que el despachador sabe leer.
+- Los puertos de los hijos se eligen libres en `127.0.0.1`; el proceso padre los
+  arranca, espera a que acepten y los termina al salir. Un hijo que no llega a
+  escuchar falla el arranque con su log.
+
+Para sitios con bases y ficheros independientes en máquinas distintas, sigue
+siendo válido un proceso por sitio con su propio puerto y su propio terminador
+TLS; `--all-sites` es la comodidad de un solo origen.
 
 ## Gating: dos capas que no se sustituyen
 
@@ -105,12 +155,13 @@ petición, no un permiso.
 
 ## Apps y plugins
 
-Ambos comandos publican los componentes de `apps.wasm_dir` (por defecto
-`plugins/`) antes de servir:
+Ambos comandos publican los componentes de `apps.wasm_dir` antes de servir:
 
-- `plugins/<app>.wasm` y `plugins/<app>/<app>.wasm` son válidos; el fichero plano
-  gana si existen los dos, para que una copia vieja dentro del mundo no tape un
-  build reciente;
+- en un bench, `wasm_dir = "apps"` y se publica `apps/<app>/<app>.wasm` (el
+  paquete de catálogo);
+- en un layout plano, `plugins/<app>.wasm` y `plugins/<app>/<app>.wasm` son
+  válidos; el fichero plano gana si existen los dos, para que una copia vieja
+  dentro del mundo no tape un build reciente;
 - `[apps] enabled = []` carga todos los encontrados; una lista con un nombre sin
   fichero es un error de arranque, no un aviso;
 - el nombre del app es el *stem* del fichero, con guiones incluidos.
@@ -124,21 +175,22 @@ compilar.
 # API y Desk, en el puerto por defecto
 ferris serve --api --web
 
+# los roles que diga config/ferris.toml
+ferris serve
+
 # todo, permitiendo al Desk de otro origen
 ferris serve --all --cors-origin https://desk.example.com
 
 # API en 127.0.0.1:9000, sin Desk
 ferris serve --api --host 127.0.0.1 --port 9000
 
-# los roles que diga config/ferris.toml
-ferris run
-
-# el proyecto de otro directorio
-ferris --dir /srv/billing run
+# un sitio y todos los sitios
+ferris serve --site acme
+ferris serve --all-sites --port 8000
 ```
 
 :::note Secreto JWT obligatorio
-Ambos comandos exigen `[auth] jwt_secret` (o `FERRIS_JWT_SECRET`/`JWT_SECRET`).
-Sin él, el arranque falla con un mensaje que nombra la variable; `serve` y `run`
-no generan uno al vuelo (solo `ferris dev` lo hace, en memoria).
+`serve` y `run` exigen `[auth] jwt_secret` (o `FERRIS_JWT_SECRET`/`JWT_SECRET`).
+Sin él, el arranque falla con un mensaje que nombra la variable; no generan uno
+al vuelo (solo `ferris dev` lo hace, en memoria).
 :::

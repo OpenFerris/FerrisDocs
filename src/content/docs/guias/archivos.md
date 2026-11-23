@@ -11,7 +11,8 @@ Ferris tiene **dos** almacenes de ficheros, y confundirlos es el error m√°s com√
 | mundo de la app | la app | todo lo que la app produce y necesita leer |
 
 El servicio de ficheros tiene API HTTP, ACL por fichero y URLs firmadas. El mundo
-es un directorio (`plugins/<app>/`) que solo ve su app, montado en `/world`.
+es un directorio (`<wasm_dir>/<app>/`; en un bench, `apps/<app>/`) que solo ve su
+app, montado en `/world`.
 
 :::caution[La app escribe en su mundo, no en el host]
 La app no pide al host que guarde un blob: escribe en `/world/files/`. Si necesita

@@ -1,21 +1,36 @@
 ---
 title: Mundo, rutas y métodos
-description: El directorio plugins/<app>/ montado en /world, los espacios de URL de la app, la autorización por ruta y la cadena de métodos heredables.
+description: El mundo de la app en <wasm_dir>/<app> montado en /world, los espacios de URL, la autorización por ruta y la cadena de métodos heredables.
 ---
 
-Una app no es solo un `.wasm`. Tiene un **mundo** en disco y dos espacios de URL
-propios, además de las rutas que declare y los métodos que publique.
+Una app no es solo un `.wasm`. Tiene un **mundo** en disco, dos espacios de URL
+propios, las rutas que declare y los métodos que publique.
 
 ## El mundo en disco
 
+El mundo es `<wasm_dir>/<app>`. Según el layout:
+
 ```text
-plugins/mi-app/
+apps/mi-app/                 # bench (wasm_dir = "apps")
+sites/acme/plugins/mi-app/   # app instalada en un sitio
+plugins/mi-app/              # app --standalone (wasm_dir = "plugins")
+```
+
+Dentro del mundo, siempre las mismas cuatro carpetas:
+
+```text
+<wasm_dir>/<app>/
   customizations/   Custom Field y Property Setter exportados
   data/             datos propios de la app
   files/            blobs que adjunta
   secrets/          material secreto (nunca se sirve)
-  mi-app.wasm       opcional: el componente dentro de su mundo
+  mi-app.wasm       en el layout plano: el componente dentro de su mundo
 ```
+
+En un bench, `apps/mi-app/` es a la vez el código fuente y el mundo de
+desarrollo: por eso el `.gitignore` del bench ignora `apps/*/data/`,
+`apps/*/files/` y `apps/*/secrets/`, pero conserva
+`apps/*/world/customizations/` (la plantilla que viaja en el paquete).
 
 El host crea las cuatro subcarpetas al publicar la app. El nombre se valida antes
 de convertirse en un componente de ruta: letras ASCII, dígitos, `-` y `_`, hasta
@@ -57,7 +72,8 @@ Content-Type: application/json
 { "app": "mi-app" }
 ```
 
-Escribe `plugins/mi-app/customizations/Nota.json` con esta forma:
+Escribe `<mundo>/customizations/Nota.json` (en un bench,
+`apps/mi-app/customizations/Nota.json`) con esta forma:
 
 ```json
 {
@@ -90,16 +106,21 @@ exportada no debe revertirse porque el proceso se reinició.
 La app posee estos prefijos. El host resuelve la app, aplica la política y te
 pasa el resto de la ruta con un identificador estable:
 
-| Prefijo | `route-id` | Auth del host |
-|---|---|---|
-| `/plugins/<app>/*` | `plugins` | ninguna impuesta; la app decide |
-| `/api/plugins/<app>/*` | el `id` de la ruta declarada que case, o `api` | la de esa ruta; sin coincidencia, sesión (y CSRF en mutaciones) |
-| `/desk/<app>/*` | `page` | sesión de Desk (redirige a login) |
-| `/api/method/<name>` | `method:<name>` | sesión del llamante |
+| Prefijo | `route-id` | Auth del host | Disponible |
+|---|---|---|---|
+| rutas declaradas (`path`) | el `id` de la ruta | la de esa ruta | siempre |
+| `/api/plugins/<app>/*` | el `id` de la ruta declarada que case, o `api` | la de esa ruta; sin coincidencia, sesión (y CSRF en mutaciones) | siempre |
+| `/plugins/<app>/*` | `plugins` | ninguna impuesta; la app decide | **solo `ferris dev`** |
+| `/desk/<app>/*` | `page` | sesión de Desk (redirige a login) | siempre |
+| `/api/method/<name>` | `method:<name>` | sesión del llamante | siempre |
 
-`/plugins/<app>/*` es la entrada directa: el `path` que recibes es lo que sigue al
-nombre de la app (`/` para el prefijo mismo). Es útil para endpoints públicos,
-webhooks y para probar con `curl`.
+`/plugins/<app>/asset/*`, `/plugins/<app>/widget/*` y el descriptor
+`/plugins/<app>` sí se sirven en producción: son el canal de UI, de confianza y
+same-origin. Lo que **no** se monta fuera de desarrollo es el reenvío genérico
+`/plugins/<app>/<rest>`: expondría el guest sin la política por ruta que sí
+aplican las rutas declaradas y `/api/plugins`, y por eso `serve` responde `404`
+ahí. Úsalo para probar con `curl` mientras desarrollas, no como entrada de
+producción.
 
 `/api/plugins/<app>/*` es tu API JSON: no hereda los permisos de
 `/api/resource`, pero sí la sesión por defecto. La política sale de tus rutas
@@ -114,7 +135,9 @@ Además de esos espacios, `descriptor.routes` declara endpoints con `path`,
 `method`, `kind`, `auth` y `body-limit`. El host los monta en la **raíz** del
 router, en el `path` declarado, y compara segmento a segmento: gana la
 coincidencia más larga. No interpreta placeholders; tú analizas el `path`
-restante.
+restante. El scaffold declara `/apps/<app>` para HTTP y `/ws` para un stream, de
+modo que la entrada de producción de una app nueva es
+`http://host:8000/apps/<app>`.
 
 Se rechazan, con log y sin montar:
 
@@ -187,8 +210,11 @@ Ejecuta el handler inmediatamente por debajo del tuyo. Reglas:
 # descriptor proyectado: capacidades, rutas, métodos y DocTypes
 curl -s localhost:8000/plugins/mi-app | jq '.routes, .methods'
 
-# el mundo, desde fuera
-ls -la plugins/mi-app/{customizations,data,files,secrets}
+# la ruta declarada por el scaffold (producción)
+curl -s localhost:8000/apps/mi-app
+
+# el mundo, desde fuera (bench)
+ls -la apps/mi-app/{customizations,data,files,secrets}
 ```
 
 `/plugins/<app>` **proyecta** el descriptor; no reenvía lo que dijo el guest. Si

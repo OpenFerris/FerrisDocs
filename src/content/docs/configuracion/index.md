@@ -3,19 +3,24 @@ title: config/ferris.toml
 description: Descubrimiento, precedencia y mapa completo de secciones del fichero de configuración de Ferris.
 ---
 
-Ferris se configura con un único fichero TOML, `config/ferris.toml`, relativo al
-directorio del proyecto. El CLI lo carga antes de ejecutar cualquier comando y
-lo fusiona sobre sus valores por defecto, de modo que un fichero parcial sigue
-siendo válido. Un solo fichero mantiene la configuración efectiva atada al
-proyecto, no a la máquina donde se ejecuta.
+Ferris se configura con un único fichero TOML, `config/ferris.toml`, en la raíz
+del **bench**. El CLI lo carga antes de ejecutar cualquier comando y lo fusiona
+sobre sus valores por defecto, de modo que un fichero parcial sigue siendo
+válido. Un solo fichero mantiene la configuración efectiva atada al proyecto, no
+a la máquina donde se ejecuta.
 
 ```text
-mi-app/
-├── Cargo.toml
+bench/
 ├── config/
 │   └── ferris.toml
-└── plugins/
+├── apps/
+│   └── billing/
+└── sites/
 ```
+
+Una app `--standalone` sí tiene su propio `config/ferris.toml` dentro de su
+directorio y usa el layout `plugins/`. Ver
+[estructura del proyecto](/getting-started/estructura-proyecto/).
 
 ## Descubrimiento del fichero
 
@@ -23,18 +28,22 @@ mi-app/
 
 | Invocación | Fichero que se carga |
 |---|---|
-| `ferris --config /srv/app/config/ferris.toml serve` | Exactamente ese fichero. Si no existe, es un error. |
-| `ferris --dir /srv/app serve` | `/srv/app/config/ferris.toml`, y el proyecto pasa a ser `/srv/app`. |
-| `ferris serve` | `$PWD/config/ferris.toml`. |
+| `ferris --config /srv/bench/config/ferris.toml serve` | Exactamente ese fichero. Si no existe, es un error. |
+| `ferris --dir /srv/bench serve` | Sube desde `/srv/bench` hasta encontrar `config/ferris.toml`. |
+| `ferris serve` | Igual, subiendo desde el directorio actual. |
 | Ninguno de los anteriores y el fichero no existe | Solo valores por defecto y entorno. Es una configuración válida. |
+
+La raíz donde aparece `config/ferris.toml` se convierte en el **bench root**: el
+directorio que resuelve `apps/` y `sites/`. Por eso un comando ejecutado dentro
+de `apps/billing/` sigue leyendo la configuración del bench.
 
 Un `--config` explícito que no existe **no** cae silenciosamente a los valores
 por defecto: devuelve `ConfigError::NotFound` con la ruta. Un `--dir` que no es
 directorio termina el proceso con un error antes de ejecutar el comando.
 
 `--dir` no solo elige el fichero: cambia el directorio de trabajo del proceso,
-así que `Cargo.toml`, `plugins/`, `target/` y `tenants/` se resuelven dentro de
-ese proyecto.
+así que `Cargo.toml`, `target/`, `apps/`, `sites/` y `tenants/` se resuelven
+dentro de ese proyecto.
 
 ## Precedencia
 
@@ -100,6 +109,7 @@ aborta el arranque.
 | `[scheduler]` | Zona horaria, tick y retención. | [Servicios](/configuracion/servicios/) |
 | `[features]` | Interruptores de subsistemas en tiempo de ejecución. | [Features](/configuracion/features/) |
 | `[apps]` | Componentes WASM publicados y su directorio. | [Apps](/configuracion/apps/) |
+| `[i18n]` | Locale por defecto y locales anunciados. | [i18n](/configuracion/i18n/) |
 | `[secrets]` | Clave AEAD de los campos `Secret`. | [Secretos](/configuracion/secretos/) |
 | `[cli]` | `unlock_source` para funciones que necesitan el árbol fuente. | — |
 | `custom` | Mapa libre de valores JSON; Ferris no lo interpreta. | — |
@@ -135,17 +145,13 @@ de la base de datos. Protege sus permisos o inyéctalo por entorno.
 
 ## Ejemplo mínimo
 
-Un proyecto SQLite que arranca sin servicios externos:
+Un bench SQLite que arranca sin servicios externos:
 
 ```toml
 # config/ferris.toml
-[project]
-name = "mi-app"
-version = "0.1.0"
-
 [database]
 type = "sqlite"
-name = "mi-app.db"
+name = "ferris.db"
 host = ""
 port = 0
 user = ""
@@ -154,13 +160,17 @@ max_connections = 5
 ssl_mode = "disable"
 
 [server]
-host = "0.0.0.0"
+host = "127.0.0.1"
 port = 8000
 roles = ["api", "web", "realtime"]
 
 [apps]
-wasm_dir = "plugins"
+wasm_dir = "apps"
 enabled = []
+
+[i18n]
+default_locale = "en"
+supported = ["en", "es"]
 ```
 
 ```bash

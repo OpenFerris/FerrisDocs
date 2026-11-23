@@ -41,8 +41,8 @@ añadir una columna.
 
 Para un cambio sin tocar código, el Desk tiene el editor de personalización
 (`POST /api/customization/{doctype}/fields` y `/properties`). Esa personalización
-se exporta a `plugins/<app>/customizations/` y `ferris migrate` la reaplica en una
-base nueva.
+se exporta a `<mundo>/customizations/` (en un bench,
+`apps/<app>/customizations/`) y `ferris migrate` la reaplica en una base nueva.
 
 ## 2. Un control de campo propio
 

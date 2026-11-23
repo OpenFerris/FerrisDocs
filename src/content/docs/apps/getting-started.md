@@ -174,21 +174,39 @@ Criterios de aceptación:
 
 ## Paso 7 — Cárgalo
 
-Deja el componente en `plugins/mi-app.wasm` (o en
-`plugins/mi-app/mi-app.wasm`) y arranca el host con `ferris dev` (desarrollo) o
-`ferris run` (usa los roles de `server.roles`); `ferris serve --all` también
-sirve todos los roles. Con la configuración por defecto no hay nada que editar:
-la sección `[apps]` ya apunta a `plugins/` y su lista de permitidos está vacía,
-lo que significa "publica todos los componentes que encuentre":
+El host publica lo que `[apps] wasm_dir` contiene. En un bench, `ferris build`
+deja el paquete en `apps/<app>/` y lo publica; un `.wasm` de otro lenguaje entra
+con `ferris app install mi-app.wasm`, que crea el paquete mínimo en el catálogo
+global. En un `--standalone`, el directorio es `plugins/`:
+
+```bash
+# desde un .wasm ya compilado: paquete mínimo en el catálogo global
+ferris app install mi-app.wasm
+
+# desde las fuentes del bench
+ferris dev --app mi-app
+ferris serve                            # producción: roles de [server] roles
+```
+
+`ferris serve --all` también sirve todos los roles. Con la configuración por
+defecto del bench no hay nada que editar: `[apps] wasm_dir = "apps"` y su lista
+de permitidos está vacía, lo que significa "publica todos los componentes que
+encuentre":
 
 ```toml
 [apps]
-wasm_dir = "plugins"
+wasm_dir = "apps"
 enabled = []        # vacío = todas las que haya
 ```
 
 `enabled` es una lista de permitidos. Añadir un nombre sin fichero es un error de
 arranque: el host no ignora una app que le pidieron servir.
+
+Para un sitio, el paquete se copia y se fija su versión:
+
+```bash
+ferris site install-app mi-app --site acme
+```
 
 ## Paso 8 — Comprueba que está viva
 
@@ -198,32 +216,47 @@ curl -s localhost:8000/plugins/mi-app | jq '{capabilities, routes, doctypes, met
 
 Si responde `404`, el host no encontró el componente o no pudo instanciarlo. Si
 responde el descriptor, la app está cargada y la superficie es la que declaró.
-Prueba después la ruta y el evento:
+Prueba después la ruta declarada y el evento:
 
 ```bash
-curl -s localhost:8000/plugins/mi-app/notas
+# el scaffold declara /apps/<app>; una ruta propia usa el path que declaraste
+curl -s localhost:8000/apps/mi-app
+
+# la API de la app, con la política de la ruta declarada o sesión por defecto
+curl -s localhost:8000/api/plugins/mi-app/notas
+
 curl -s -X POST localhost:8000/api/resource/Nota -H 'content-type: application/json' \
   -d '{"titulo": "Primera"}'
 ```
+
+:::caution[`/plugins/<app>/*` solo en desarrollo]
+El reenvío directo al guest (`/plugins/mi-app/notas`) es una superficie de
+`ferris dev`. En `serve` solo se sirven el descriptor, los assets y los widgets
+bajo `/plugins/<app>/…`; el resto responde `404`. La entrada de producción es la
+ruta declarada o `/api/plugins/<app>/*`.
+:::
 
 ## Estructura de proyecto, sin elegir lenguaje
 
 | Lenguaje | Estructura típica |
 |---|---|
-| Rust | `Cargo.toml`, `src/lib.rs`, `wit/ferris.wit`, `plugins/` |
+| Rust (bench) | `apps/<app>/{Cargo.toml,src/lib.rs,wit/ferris.wit}`, `config/ferris.toml`, `sites/` |
+| Rust (`--standalone`) | `Cargo.toml`, `src/lib.rs`, `wit/ferris.wit`, `plugins/` |
 | Python | `mi_app.py`, `wit/ferris.wit`, `app.wasm` |
 | JS/TS | `package.json`, `src/`, `wit/`, `types/`, `dist/` |
 | Go | `go.mod`, `main.go`, `wit/`, `main.wasm` |
 | C/C++/C#/Zig | el manifiesto de tu build, `wit/` y el `.wasm` final |
 
-Nada de eso lo impone el host: solo importan el componente y su nombre. La
-página [Lenguajes](/apps/languages/) compara los toolchains.
+Nada de eso lo impone el host: solo importan el componente y el directorio que
+`[apps] wasm_dir` nombra. La página [Lenguajes](/apps/languages/) compara los
+toolchains.
 
 ## Errores de la primera vez
 
 | Síntoma | Causa habitual |
 |---|---|
-| `404` en `/plugins/<app>` | el fichero no está en `plugins/` o el nombre no coincide |
+| `404` en `/plugins/<app>` | el fichero no está en `wasm_dir` o el nombre no coincide |
+| `404` en `/plugins/<app>/algo` bajo `serve` | el reenvío solo existe en `ferris dev`; usa la ruta declarada o `/api/plugins` |
 | fallo al instanciar | es un módulo core, no un componente, o el world no es el contrato |
 | `403` con `permission-denied` | falta una capacidad específica en `describe()` |
 | la ruta responde `404` | no está en `routes`, o choca con un prefijo del framework |

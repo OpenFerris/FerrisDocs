@@ -1,118 +1,155 @@
 ---
 title: Estructura del proyecto
-description: Qué genera ferris new, qué directorios aparecen en tiempo de ejecución y dónde acaba la app y empieza el framework.
+description: El layout de bench con apps/ y sites/, el de una app --standalone, qué escribe ferris build y dónde acaba la app y empieza el framework.
 ---
 
-## Lo que escribe `ferris new`
+Un proyecto Ferris es un **bench**: un directorio que contiene una o varias apps,
+sus sitios de despliegue y una única configuración. `ferris new <name>` construye
+ese layout; `--standalone` conserva el antiguo de una app autocontenida.
+
+## El bench
 
 ```text
-my-app/
-├── .cargo/
-│   └── config.toml          # target = "wasm32-wasip2"
+bench/
+├── .git/
 ├── .gitignore
-├── Cargo.toml               # crate cdylib, solo wit-bindgen
-├── README.md
 ├── config/
-│   └── ferris.toml          # database, server, apps
-├── rust-toolchain.toml      # canal 1.98.1 + target wasm32-wasip2
-├── src/
-│   └── lib.rs               # el componente: describe + exports WIT
-└── wit/
-    └── ferris.wit           # copia del contrato ferris:framework@0.3.0
+│   └── ferris.toml          # database, server, apps, i18n
+├── apps/
+│   └── billing/
+│       ├── .cargo/
+│       │   └── config.toml  # target = "wasm32-wasip2"
+│       ├── .gitignore
+│       ├── Cargo.toml       # crate cdylib, solo wit-bindgen
+│       ├── README.md
+│       ├── rust-toolchain.toml
+│       ├── src/
+│       │   └── lib.rs       # describe + exports WIT
+│       └── wit/
+│           └── ferris.wit   # copia del contrato del host
+└── sites/                   # nace vacío
 ```
 
-El `.gitignore` generado es:
+El repositorio git es **uno**, en la raíz. Un `.git` anidado en `apps/billing/`
+escondería la app del historial del bench y dejaría `sites/` fuera de control de
+versiones.
+
+`config/ferris.toml` es la configuración de todo el bench: la leen `ferris
+build`, `dev`, `app` y `site` desde cualquier subdirectorio de `apps/`, porque el
+loader sube por el árbol hasta encontrarla. Una app del bench **no** lleva
+`config/` propio.
+
+El `.gitignore` del bench ignora los artefactos y, sobre todo, `sites/`:
 
 ```text
 /target
-Cargo.lock
+/apps/*/target
 *.db
 .env
+
+# Deployments: credentials, data, files and secrets
+/sites/
+
+# App dev worlds (the exported template lives in apps/<app>/world)
+/apps/*/data/
+/apps/*/files/
+/apps/*/secrets/
+/apps/*/world/data/
+/apps/*/world/files/
+/apps/*/world/secrets/
 ```
 
-### `Cargo.toml`
+Un `site_config.json` lleva la contraseña de la base y la instancia de una app
+lleva ficheros y secretos: nada de eso pertenece al repositorio.
 
-```toml
-[package]
-name = "my-app"
-version = "0.1.0"
-edition = "2021"
+### La app
 
-[lib]
-crate-type = ["cdylib"]
-path = "src/lib.rs"
+`Cargo.toml` declara `crate-type = ["cdylib"]`, la dependencia `wit-bindgen` y un
+`[workspace]` vacío para que la crate sea independiente. `.cargo/config.toml`
+fija `wasm32-wasip2`, así que un `cargo build` normal produce el módulo core que
+el framework envuelve en un componente.
 
-[dependencies]
-wit-bindgen = "0.62"
-
-[workspace]
-```
-
-Dos rasgos del scaffold: `crate-type = ["cdylib"]` porque el artefacto es un
-componente wasm, no un binario, y `[workspace]` vacío para que el proyecto sea
-una crate independiente del workspace del framework.
-
-### `.cargo/config.toml`
-
-```toml
-[build]
-target = "wasm32-wasip2"
-```
-
-Así un `cargo build` normal produce el módulo core que el framework envuelve.
-
-### `config/ferris.toml`
-
-Tiene tres secciones en el scaffold: `[database]` (SQLite local), `[server]`
-(host, puerto y `roles = ["api", "web", "realtime"]`) y `[apps]`
-(`wasm_dir = "plugins"`, `enabled = []`). El resto de secciones —`[auth]`,
-`[redis]`, `[files]`, `[secrets]`, …— toman sus defaults y se añaden
-solo si las necesitas.
-
-### `src/lib.rs`
-
-El componente implementa el mundo `ferris-app`. Los exports son `describe`,
+`src/lib.rs` implementa el mundo `ferris-app`. Los exports son `describe`,
 `handle_request`, `doctype_event`, `handle_stream`, `handle_stream_event`,
 `handle_datagram`, `handle_job`, `ui_asset` y `ui_widget`. `describe()` declara
-capacidades, rutas y DocTypes; no hay un `main` ni acceso directo a la base de
+capacidades, rutas y DocTypes; no hay `main` ni acceso directo a la base de
 datos.
 
-### `wit/ferris.wit`
+`wit/ferris.wit` es una copia byte a byte del contrato del host. No la edites a
+mano: si el contrato cambia, vuelve a copiarla. `ferris doctor` compara la
+`package ferris:framework@<version>` de la copia con la que enlaza el binario y
+falla si no coinciden.
 
-Es una copia byte a byte de `ferris-wasm/wit/ferris.wit`
-(`ferris:framework@0.3.0`). El paquete declara seis interfaces: `types`, `data`,
-`schema`, `io`, `platform` y `descriptor`. No edites la copia a mano: si el
-contrato cambia, vuelve a copiarla, o `ferris build` compilará contra una versión
-distinta de la que ejecuta el host.
+## Lo que escribe `ferris build`
 
-## Lo que aparece después
-
-Nada de esto lo escribe el scaffold; lo crea el framework al arrancar o migrar:
+El build produce dos artefactos con propósitos distintos:
 
 ```text
-my-app/
-├── my-app.db                # SQLite, tras `ferris migrate`
-├── plugins/                 # [apps] wasm_dir
-│   └── my-app/              # el "mundo" de la app (solo si se ejecuta)
-│       ├── customizations/  # Custom Field / Property Setter exportados
-│       ├── data/
-│       ├── files/
-│       └── secrets/
-└── plugins/my-app.wasm      # lo escribe `ferris build`
+apps/billing/
+├── plugins/
+│   └── billing.wasm     # componente de desarrollo
+├── billing.wasm         # paquete de catálogo: el componente
+├── plugin.toml          # manifest + [config] por defecto
+├── world/               # PLANTILLA que se copia a un sitio
+│   ├── customizations/
+│   ├── data/
+│   ├── files/
+│   └── secrets/
+└── assets/              # assets de UI, si la app los tiene
 ```
 
-- `plugins/<app>/` es el **mundo** de la app: el único sitio del disco que el
-  guest puede escribir. Se monta en `/world` dentro del sandbox.
-- `plugins/<app>.wasm` es el componente plano que escribe `ferris build`. Si
-  existen los dos, gana el plano, de modo que una copia dentro del mundo nunca
-  tapa un componente recién compilado.
-- `customizations/*.json` se aplica con `ferris migrate`, no al arrancar.
+- `plugins/billing.wasm` es el artefacto plano del build (el que usa un
+  `--standalone`); `ferris dev` compila y carga directamente desde
+  `target/wasm32-wasip2/debug/`, sin pasar por él.
+- `billing.wasm` + `plugin.toml` + `world/` forman el paquete que
+  `ferris site install-app` copia. `plugin.toml` y `world/` existentes **no** se
+  sobrescriben: el manifest guarda la versión y el operador puede haberlos
+  ajustado.
+- `world/customizations/` se rellena copiando `apps/billing/customizations/*.json`
+  si existen. `data/`, `files/` y `secrets/` del template se crean vacíos.
 
-:::note[Nombre de la app]
-El nombre del directorio del mundo pasa por una validación de
-`ferris_core::plugins` (letras, dígitos, `-`, `_`) antes de convertirse en
-componente de ruta. Nada fuera del mundo es escribible a través de él.
-:::
+## El mundo en desarrollo
+
+`[apps] wasm_dir = "apps"` hace que el catálogo sea `apps/`. El **mundo** de una
+app es `<wasm_dir>/<app>`, así que en el bench es el propio directorio
+`apps/billing/`:
+
+```text
+apps/billing/
+├── customizations/      # Custom Field / Property Setter exportados
+├── data/
+├── files/
+└── secrets/             # nunca se sirve por HTTP
+```
+
+Se monta en `/world` dentro del sandbox y es lo único que el guest puede
+escribir. Su layout y sus reglas están en
+[Mundo, rutas y métodos](/apps/mundo-y-rutas/).
+
+Un sitio no usa este directorio: al instalar la app, la plantilla `world/` se
+copia a `sites/<site>/plugins/<app>/`, que pasa a ser el mundo del sitio. Ver
+[Sitios](/configuracion/sites/).
+
+## El layout `--standalone`
+
+`ferris new --standalone billing` conserva el proyecto autocontenido:
+
+```text
+billing/
+├── .git/
+├── config/ferris.toml   # configuración propia
+├── plugins/             # [apps] wasm_dir
+├── src/
+└── wit/
+```
+
+La configuración usa `wasm_dir = "plugins"`, el componente se escribe en
+`plugins/billing.wasm` y el mundo en `plugins/billing/`. `ferris build` deja
+además el paquete de catálogo en la raíz de la app (`billing.wasm`,
+`plugin.toml`, `world/` y `assets/`), pero el host solo publica `plugins/`: no hay
+`apps/` ni `sites/`. `ferris dev` se ejecuta dentro de `billing/` y
+`ferris serve --all` publica `plugins/`. Es el layout para una app aislada, no
+para un bench con varios sitios.
 
 ## Framework y app: quién hace qué
 
@@ -126,7 +163,7 @@ componente de ruta. Nada fuera del mundo es escribible a través de él.
 | Frontend | Desk (`ferris-web`) | assets y widgets opcionales |
 
 La app es **compute puro**: pide servicios por las importaciones WIT y el host
-los ejecuta. Esto es lo que permite correrla en un sandbox con capacidades
+los ejecuta. Eso es lo que permite correrla en un sandbox con capacidades
 explícitas.
 
 ## Los dos workspaces del framework
@@ -139,8 +176,8 @@ Ferris son **21 crates repartidos en dos repositorios**:
 | **FerrisFramework** | 12 | `ferris-web`, `ferris-realtime`, `ferris-jobs`, `ferris-scheduler`, `ferris-files`, `ferris-email`, `ferris-print`, `ferris-report`, `ferris-integrations`, `ferris-wasm`, `ferris-server`, `ferris-cli` |
 
 Framework depende de Core por rutas `../../FerrisCore/ferris-*`; los dos
-repositorios deben estar hermanos. La dirección del frontend sigue siendo
-estricta: `ferris-web` → `ferris-web-ui` → `ferris-web-shared`.
+repositorios deben estar hermanos. La dirección del frontend es estricta:
+`ferris-web` → `ferris-web-ui` → `ferris-web-shared`.
 
 En Framework, `default-members` incluye cinco crates (`ferris-web`,
 `ferris-realtime`, `ferris-jobs`, `ferris-scheduler`,

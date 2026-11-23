@@ -75,9 +75,11 @@ Ferris publica `ferris:framework@0.3.0` en `ferris-wasm/wit/ferris.wit`, con
 seis interfaces: `types`, `data`, `schema`, `io`, `platform`, `descriptor`.
 
 **World** (mundo)
-El directorio propio de una app, `plugins/<app>/`, montado en `/world` dentro del
-sandbox. Contiene `customizations/`, `data/`, `files/` y `secrets/`. Es el único
-sitio del disco que el guest puede escribir.
+El directorio propio de una app, `<wasm_dir>/<app>/`, montado en `/world` dentro
+del sandbox. En un bench es `apps/<app>/`; en un sitio,
+`sites/<site>/plugins/<app>/`; en un `--standalone`, `plugins/<app>/`. Contiene
+`customizations/`, `data/`, `files/` y `secrets/`. Es el único sitio del disco
+que el guest puede escribir.
 
 **Capability**
 Un permiso que la app **declara** en `describe()` y que el host concede al

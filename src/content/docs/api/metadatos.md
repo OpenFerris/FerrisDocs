@@ -191,9 +191,9 @@ POST   /api/customization/{doctype}/export
 
 `GET` devuelve los custom fields y property setters efectivos. `POST …/fields`
 responde `201` con el campo guardado; borrar responde `204`. `export` escribe
-`plugins/<app>/customizations/<doctype>.json` para que `ferris migrate` lo
-reaplique en otra base de datos. Requiere permiso de personalización sobre el
-DocType.
+`<mundo>/customizations/<doctype>.json` (en un bench,
+`apps/<app>/customizations/…`) para que `ferris migrate` lo reaplique en otra base
+de datos. Requiere permiso de personalización sobre el DocType.
 
 ## Widgets
 
