@@ -32,7 +32,11 @@ Esta página agrupa por familia. No lista campos: para eso, la fuente es
 | `Dashboard` / `Dashboard Widget` | Dashboard y sus tarjetas |
 | `Widget` / `Widget Param` | Widget del Desk (custom element) y sus parámetros |
 | `Kanban Board`, `Calendar View`, `List Filter`, `Page` | Vistas y páginas guardadas |
+| `Dashboard Chart`, `Number Card`, `Custom HTML Block` | Definiciones que referencian `Workspace Chart`, `Workspace Number Card` y `Workspace Custom Block` |
+| `DocType Layout` | Layout de formulario referenciado por `Workspace Link` |
+| `Module Onboarding` | Flujo de incorporación referenciado por `Workspace` |
 | `Workspace` + `Workspace Link`, `Shortcut`, `Chart`, `Number Card`, `Quick List`, `Custom Block` | Navegación del Desk y sus bloques |
+| `Domain` | Dominio al que se restringen un workspace o un shortcut |
 | `Country`, `Currency`, `Language`, `Translation` | Datos GEO (módulo `GEO`) |
 
 :::note[Código frente a datos]
