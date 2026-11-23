@@ -95,9 +95,11 @@ efímero desde el gestor de secretos.
 
 Un plugin no recibe el proceso; recibe un mundo y un conjunto de capacidades.
 
-- **Mundo**: `plugins/<app>/` montado en `/world`, lectura/escritura. El preopen
-  es el sandbox: wasmtime rechaza `..`, rutas que salen de la raíz y un root
-  simbólico. El montaje es por instancia, así que una app no ve el mundo de otra.
+- **Mundo**: `<wasm_dir>/<app>/` (`apps/<app>/` en un bench,
+  `sites/<site>/plugins/<app>/` en un sitio) montado en `/world`,
+  lectura/escritura. El preopen es el sandbox: wasmtime rechaza `..`, rutas que
+  salen de la raíz y un root simbólico. El montaje es por instancia, así que una
+  app no ve el mundo de otra.
 - **Capacidades primordiales**, siempre concedidas: rutas propias, HTTP saliente
   bajo política, docstore, config, schema, scheduler, notificaciones, pubsub y su
   mundo.

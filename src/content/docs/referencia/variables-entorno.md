@@ -26,8 +26,10 @@ tablas de abajo marcan cuál es cuál.
 | Variable | Efecto | Default |
 |---|---|---|
 | `FERRIS_CONFIG_DIR` | Directorio de configuración a cargar | `dirs::config_dir()/ferris` |
-| `FERRIS_PROJECT_DIR` | Raíz del proyecto; de ella cuelga `plugins/` | directorio actual |
+| `FERRIS_PROJECT_DIR` | Raíz del proyecto; de ella cuelgan `apps/`, `plugins/` y `sites/` | directorio actual |
 | `FERRIS_PLUGINS_DIR` | Fuerza el directorio de plugins/worlds | `<project>/plugins` |
+| `FERRIS_APPS_DIR` | Catálogo global de apps | `<project>/apps` |
+| `FERRIS_SITES_DIR` | Raíz de los sitios | `<project>/sites` |
 | `FERRIS_TENANTS_DIR` | Raíz de los ficheros de tenant | `<config>/ferris/tenants` |
 | `FERRIS_HOME` | Layout del framework del que `ferris new` copia el WIT | autodetectado junto al binario |
 | `FERRIS_DATA_DIR` | Directorio de datos con el WIT embebido | — |

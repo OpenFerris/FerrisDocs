@@ -15,10 +15,10 @@ Datos de versión de esta documentación:
 
 | Dato | Valor |
 |---|---|
-| Ferris | `0.3.0` (pre-1.0) |
+| Ferris | `0.4.0` (pre-1.0) |
 | Toolchain | Rust `1.98.1`, edición 2024 |
 | Crates | 21 (9 en FerrisCore + 12 en FerrisFramework) |
-| Contrato WIT | `ferris:framework@0.3.0` |
+| Contrato WIT | `ferris:framework@0.4.0` |
 | Licencia | MIT |
 
 ## Principios

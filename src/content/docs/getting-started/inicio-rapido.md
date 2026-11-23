@@ -1,156 +1,111 @@
 ---
 title: Inicio rápido
-description: Crea un proyecto con ferris new, migra el esquema, arranca el servidor en Docker y entra al Desk.
+description: Crea un bench con ferris new, arranca la app con ferris dev, publica el paquete y sirve un sitio con ferris serve --site.
 ---
 
-Esta página recorre el camino mínimo: un proyecto nuevo, su configuración, la
-migración y el primer login en el Desk. Todos los comandos se ejecutan dentro
+Esta página recorre el camino mínimo: un bench nuevo, su app, la migración, el
+primer login y un sitio que sirve esa app. Todos los comandos se ejecutan dentro
 del servicio `ferris` de `compose.yaml`, que monta el repositorio en
 `/workspace`. Si aún no tienes la imagen, empieza por
 [instalación](/getting-started/instalacion/).
 
-## 1. Crear el proyecto
-
-```bash
-docker compose run --rm ferris cargo run -p ferris-cli -- new my-app
-```
-
-El directorio se crea en el host como `my-app/`, porque `/workspace` es un bind
-mount. La primera invocación compila la CLI y su grafo de dependencias, así que
-puede tardar varios minutos.
-
-`ferris new` es atómico: si un paso falla, borra lo que había creado.
-Rechaza nombres que no empiecen por letra ASCII o que contengan algo distinto de
-letras, dígitos, `-` y `_`, y falla si el destino ya existe.
-
-Puedes elegir la ubicación con `--into`:
-
-```bash
-docker compose run --rm ferris \
-  cargo run -p ferris-cli -- new billing --into apps/billing
-```
-
-El scaffold contiene `src/lib.rs` (el componente WIT), `wit/ferris.wit` (copia
-del contrato del framework), `config/ferris.toml`, `.cargo/config.toml`,
-`rust-toolchain.toml`, `Cargo.toml`, `.gitignore` y `README.md`, y hace
-`git init`. El detalle está en
-[estructura del proyecto](/getting-started/estructura-proyecto/).
-
-## 2. Compilar la CLI una vez
-
-El proyecto creado es un componente WASM independiente: **no** incluye la CLI
-del framework. Para ejecutar `ferris` dentro de `my-app`, deja el binario en el
-`target/` del repositorio:
+## 1. Compila la CLI una vez
 
 ```bash
 docker compose run --rm ferris cargo build -p ferris-cli --release
 ```
 
 El artefacto queda en `/workspace/target/release/ferris`, visible también en el
-host. A partir de aquí se invoca por ruta absoluta, porque el directorio de
-trabajo será el del proyecto. También puedes abrir una shell y trabajar dentro:
+host. La CLI no se instala dentro de cada app: se invoca por ruta absoluta desde
+el directorio del bench. La primera compilación tarda varios minutos.
+
+## 2. Crea el bench
+
+El directorio de trabajo **es** el bench. `ferris new` crea la app bajo `apps/`,
+la configuración única y `sites/`, y hace `git init` en la raíz (no dentro de la
+app):
 
 ```bash
-docker compose run --rm ferris bash
-cd /workspace/my-app
-/workspace/target/release/ferris doctor
+mkdir -p bench
+docker compose run --rm --workdir /workspace/bench \
+  ferris /workspace/target/release/ferris new billing
 ```
 
-## 3. Revisar `config/ferris.toml`
+```text
+bench/
+├── .git/
+├── config/ferris.toml     # una sola configuración para apps y sitios
+├── apps/
+│   └── billing/           # el crate WIT/WASM
+└── sites/                 # despliegues; nace vacío
+```
 
-El scaffold escribe una configuración de desarrollo con SQLite, para que el
-servidor arranque sin base de datos externa:
+`ferris new` es atómico: si un paso falla, borra lo que había creado. Rechaza
+nombres que no empiecen por letra ASCII o que contengan algo distinto de letras,
+dígitos, `-` y `_`, y falla si el destino ya existe. Si necesitas el layout
+antiguo de una app autocontenida (`./billing/` con su propia configuración), usa
+`--standalone`; lo explica [ferris new](/cli/new/).
+
+## 3. Revisa `config/ferris.toml`
 
 ```toml
-# my-app — Ferris configuration (dev)
 [database]
 type = "sqlite"
-name = "my-app.db"
-host = ""
-port = 0
-user = ""
-password = ""
-max_connections = 5
-ssl_mode = "disable"
+name = "ferris.db"
+# …
 
 [server]
-host = "0.0.0.0"
+host = "127.0.0.1"
 port = 8000
 roles = ["api", "web", "realtime"]
 
 [apps]
-wasm_dir = "plugins"
+wasm_dir = "apps"        # el catálogo global
 enabled = []
+
+[i18n]
+default_locale = "en"
+supported = ["en", "es"]
 ```
 
-Para usar PostgreSQL, cambia el bloque y arranca el servicio:
+`wasm_dir = "apps"` es lo que hace del bench un catálogo: `ferris build` publica
+el paquete en `apps/<app>/` y `ferris site install-app` lo copia a un sitio. Para
+PostgreSQL, cambia el bloque y arranca el servicio `postgres`; `host = "postgres"`
+funciona porque ambos contenedores comparten la red de Compose.
 
-```toml
-[database]
-type = "postgres"
-name = "ferris"
-host = "postgres"
-port = 5432
-user = "ferris"
-password = "ferris"
-max_connections = 10
-ssl_mode = "disable"
-```
-
-`host = "postgres"` funciona porque ambos contenedores comparten la red de
-Compose. No uses `localhost` ahí: dentro del contenedor `ferris`, `localhost` es
-el propio contenedor. Desde el host, PostgreSQL escucha en `localhost:5432`.
-
-## 4. Migrar
+## 4. Migra
 
 ```bash
-docker compose run --rm --workdir /workspace/my-app \
+docker compose run --rm --workdir /workspace/bench \
   ferris /workspace/target/release/ferris migrate
 ```
 
-Aplica las migraciones de esquema del framework contra la base configurada, en
-proceso. Para ver qué haría antes de aplicarlo:
+Aplica las migraciones del framework contra `ferris.db` y las customizaciones
+que cada app habilitada exporta en su mundo. Para verlo antes de aplicarlo:
 
 ```bash
-docker compose run --rm --workdir /workspace/my-app \
+docker compose run --rm --workdir /workspace/bench \
   ferris /workspace/target/release/ferris migrate --dry-run
 ```
 
-`migrate` también aplica las personalizaciones exportadas de cada app habilitada
-(`plugins/<app>/customizations/*.json`). Es el único comando que lo hace:
-`serve` no las reaplica, para que una edición hecha en el Desk después del
-último export no se revierta al reiniciar.
+## 5. Arranca en desarrollo
 
-## 5. Arrancar
-
-`ferris dev` levanta los roles `api`, `web` y `realtime` en un solo puerto y
-recarga el plugin cuando cambian sus fuentes. Necesita **publicar** el puerto en
-el host: `--service-ports` aplica los mapeos de `compose.yaml` (`8000` y `4321`).
+Desde la raíz del bench, con `--app`:
 
 ```bash
-docker compose run --rm --service-ports --workdir /workspace/my-app \
-  ferris /workspace/target/release/ferris dev
+docker compose run --rm --service-ports --workdir /workspace/bench \
+  ferris /workspace/target/release/ferris dev --app billing
 ```
 
-La primera ejecución compila el componente para `wasm32-wasip2`; si faltan
-dependencias en la caché de Cargo, necesita red. `Ctrl+C` detiene el servidor.
+Con una sola app bajo `apps/` el flag es opcional; con varias es obligatorio (o
+entras en `apps/<app>/` y ejecutas `ferris dev` allí). El comando compila a
+`wasm32-wasip2`, sirve API, Desk y realtime en el puerto 8000 y recarga la app al
+cambiar sus fuentes. `--service-ports` publica `8000` y `4321` en el host.
 
-Si ya tienes un contenedor de desarrollo levantado con `docker compose up -d
-ferris`, puedes entrar por `docker compose exec` en lugar de crear otro:
+La primera ejecución necesita red si faltan dependencias en la caché de Cargo.
+`Ctrl+C` detiene el servidor.
 
-```bash
-docker compose exec ferris bash
-cd /workspace/my-app
-/workspace/target/release/ferris dev
-```
-
-:::caution[Los puertos se publican una sola vez]
-Dos procesos no pueden escuchar el mismo puerto del host. Si el sitio de
-documentación está usando `4321`, el arranque fallará; para el otro proceso o
-publica solo `8000` con `-p 8000:8000`.
-:::
-
-## 6. Iniciar sesión
+## 6. Inicia sesión
 
 `ferris dev` crea, si la tabla de usuarios está vacía, la cuenta:
 
@@ -160,61 +115,94 @@ password: ferrisAdmin123
 rol:      System Manager
 ```
 
-La contraseña se imprime en el log del arranque y la siembra es idempotente: si
-ya existe un usuario, no toca nada. **Es una credencial de desarrollo**;
-cámbiala en cuanto salgas del entorno local.
-
-Abre:
+La siembra es idempotente y **es una credencial de desarrollo**: cámbiala en
+cuanto salgas del entorno local. Abre:
 
 - Desk: `http://localhost:8000/desk`
 - Login: `http://localhost:8000/login`
-- Salud del proceso: `http://localhost:8000/health`
+- Salud: `http://localhost:8000/health`
+- Descriptor de la app: `http://localhost:8000/plugins/billing`
 
-El login es un `POST /api/auth/login` con `{"username": "...", "password":
-"..."}` que abre una sesión en cookie y devuelve el token CSRF en la cabecera
-`X-CSRF-Token`. El Desk lo hace por ti; si vas a llamar a la API a mano, lee
-[autenticación](/api/autenticacion/).
+El login es un `POST /api/auth/login` que abre una sesión en cookie y devuelve el
+token CSRF en `X-CSRF-Token`. El Desk lo hace por ti; para llamar a la API a
+mano, lee [autenticación](/api/autenticacion/).
 
-:::danger[`ferris serve` no siembra usuarios]
-La cuenta `admin@local` la crea `ferris dev`, no `serve`. Un `serve` sobre una
-base de datos vacía no tiene con qué iniciar sesión. Siembra en desarrollo (o
-crea el usuario por la vía que uses en tu despliegue) antes de esperar un login.
-:::
+## 7. Publica y sirve un sitio
 
-Si prefieres el servidor sin recarga:
+El build escribe dos artefactos: el componente plano en
+`apps/billing/plugins/billing.wasm` y el **paquete de catálogo** en
+`apps/billing/billing.wasm` con `plugin.toml`, `world/` y `assets/`.
 
 ```bash
-docker compose run --rm --service-ports --workdir /workspace/my-app \
-  ferris /workspace/target/release/ferris serve --all
+ferris build --app billing
 ```
 
-## 7. Comprobar la instalación
+Un sitio recibe una **copia** del paquete y fija su versión en
+`site_config.json`; reemplazar el catálogo no cambia lo que sirve un sitio ya
+instalado.
+
+```bash
+docker compose run --rm --service-ports --workdir /workspace/bench \
+  ferris bash
+```
+
+Dentro del contenedor, en la raíz del bench:
+
+```bash
+export FERRIS=/workspace/target/release/ferris
+export FERRIS_ADMIN_PASSWORD='cambia-esta-clave'
+export FERRIS_JWT_SECRET="$(openssl rand -hex 32)"
+
+$FERRIS build --app billing
+$FERRIS site new acme --host acme.localhost --db-type sqlite \
+  --admin-email admin@acme.local
+$FERRIS site install-app billing --site acme
+$FERRIS site migrate acme
+$FERRIS site info acme               # incluye versions: billing=0.1.0
+$FERRIS serve --site acme            # sin flags de rol: usa [server] roles
+```
+
+Entra en `http://acme.localhost:8000/desk` con `admin@acme.local` y la contraseña
+que exportaste. Un `Host` distinto recibe `421 Misdirected Request`.
+
+Para servir todos los sitios habilitados desde un solo puerto y despachar por
+`Host`:
+
+```bash
+$FERRIS serve --all-sites --port 8000
+```
+
+Los límites de ese despachador (TLS delante, HTTP/1.1 y WebSocket) están en
+[ferris serve y run](/cli/serve-y-run/).
+
+## 8. Comprueba la instalación
 
 Con el servidor parado o en otra terminal:
 
 ```bash
-docker compose run --rm --workdir /workspace/my-app \
+docker compose run --rm --workdir /workspace/bench \
   ferris /workspace/target/release/ferris doctor
 ```
 
-`doctor` valida toolchain, estructura, configuración, matriz de features, base de
-datos, Redis, secretos, migraciones y target wasm. Un fallo crítico devuelve
-código de salida distinto de cero, así que sirve en CI.
+`doctor` valida toolchain, layout del bench o de la app, configuración, matriz de
+features, base de datos, Redis, secretos, migraciones, target wasm y, dentro de
+una app, que `wit/ferris.wit` coincide con la versión del host. Un fallo crítico
+devuelve código distinto de cero, así que sirve en CI.
 
-## 8. Siguiente paso
+## 9. Siguiente paso
 
-El scaffold ya declara un DocType `Task` con tres campos (`subject`, `status`,
-`due_date`) dentro de `describe()`. Para entenderlo y para declarar el tuyo:
+El scaffold declara un DocType `Task` con tres campos (`subject`, `status`,
+`due_date`) dentro de `describe()`. Para entenderlo y declarar el tuyo:
 
 → [Tu primer DocType](/getting-started/primer-doctype/)
 
 :::tip[Qué mirar si algo falla]
-- `no roles selected` → pasa `--all` o al menos un flag de rol a `serve`.
+- `no roles selected` → el fichero no define `[server] roles` y no pasaste
+  ningún flag de rol.
 - `invalid config value for [features]` → tu binario no compila ese subsistema;
   reconstruye con la feature o apaga el gate.
-- `Project structure` o `Config files` en rojo → `doctor` exige `src/`,
-  `config/` y `Cargo.toml`; `migrate` exige `Cargo.toml` y lee la configuración
-  del directorio actual.
+- `Project structure` o `WIT version` en rojo → `doctor` exige `apps/` + `sites/`
+  en la raíz del bench, o `src/` + `wit/ferris.wit` dentro de la app.
 - La página no carga en `localhost:8000` → el contenedor no publicó el puerto;
   repite el arranque con `--service-ports` o `-p 8000:8000`.
 :::

@@ -7,7 +7,7 @@ Un **tenant** es una instalación con su propia base de datos, su propio directo
 de ficheros, su propio Redis y su propio admin. `ferris tenant` administra el
 registro; no convierte un proceso en servidor virtual multinquilino.
 
-:::caution[Qué hace y qué no hace la 0.3.0]
+:::caution[Qué hace y qué no hace la 0.4.0]
 `ferris tenant` crea y mantiene la **configuración** de cada tenant y aprovisiona
 su base de datos y su directorio. El servidor arranca con **una** configuración
 (`[database]`, `[files]`), así que servir varios tenants significa ejecutar una

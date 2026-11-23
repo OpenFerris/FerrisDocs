@@ -4,39 +4,45 @@ description: Servidor de desarrollo con API, Desk y realtime en un solo puerto, 
 ---
 
 `ferris dev` arranca API, Desk y realtime en un puerto y recarga la app cuando
-cambian sus fuentes. Debe ejecutarse **dentro de un proyecto** (`Cargo.toml` y
-`wit/ferris.wit` presentes); si falta cualquiera de los dos, el comando falla con
-un mensaje que dice cómo crear el proyecto.
+cambian sus fuentes. Debe ejecutarse en un **bench** o dentro de una app (con
+`Cargo.toml` y `wit/ferris.wit`); desde la raíz del bench hay que nombrar la app
+con `--app`, salvo que `apps/` contenga exactamente una.
 
 ```bash
-ferris dev [--host HOST] [--port PORT] [--open] [--hot-reload MODE]
+ferris dev [--app NAME] [--site NAME] [--host HOST] [--port PORT] [--open]
+           [--hot-reload MODE]
 ```
 
 | Flag | Por defecto | Efecto |
 |---|---|---|
+| `--app <NAME>` | la única app de `apps/`, o el directorio actual | App que se compila y se sirve. |
 | `--host <HOST>` | `0.0.0.0` | Dirección de escucha. |
 | `-p`, `--port <PORT>` | `8000` | Puerto único para API, Desk y realtime. |
 | `--open` | desactivado | Abre `http://<host>:<port>` en el navegador tras ~1,2 s. |
 | `--hot-reload <MODE>` | `app` | `app`, `front` (alias `frontend`) o `both`. |
+| `--site <NAME>` | — | Sirve ese sitio: su base, ficheros, Redis y apps. |
 
 ## Modo `app` (por defecto)
 
 Es el ciclo corto: solo se recompila la app, no el framework.
 
-1. Compila el componente con `cargo build --target wasm32-wasip2 --profile dev`
+1. Resuelve la app antes de tocar el directorio de trabajo: `--app <name>` (o la
+   única app de `apps/`) hace que el proceso se coloque en `apps/<app>/`, de modo
+   que el build, el watcher y el bundle de hidratación ven la misma crate.
+2. Compila el componente con `cargo build --target wasm32-wasip2 --profile dev`
    y lo busca en `target/wasm32-wasip2/debug/<crate>.wasm` (el nombre del crate
    cambia `-` por `_`).
-2. Copia el bundle de hidratación a `./pkg` si encuentra uno (`FERRIS_HYDRATE_DIR`,
+3. Copia el bundle de hidratación a `./pkg` si encuentra uno (`FERRIS_HYDRATE_DIR`,
    `ferris-web/pkg`, `ferris-web/target/site/pkg` o el propio `./pkg`). Sin
    bundle, el Desk se sirve solo en SSR y avisa una vez.
-3. Fija los roles `api`, `web` y `realtime` — `server.roles` del fichero no se
+4. Fija los roles `api`, `web` y `realtime` — `server.roles` del fichero no se
    usa en desarrollo — y construye los settings con la base de datos y el JWT de
    `config/ferris.toml`.
-4. Siembra un operador de desarrollo si la tabla de usuarios está vacía.
-5. Prepara el mundo de la app en `plugins/<app>/` y publica el componente por la
-   misma ruta que `ferris serve`, para que un fallo de registro no aparezca solo
-   en producción.
-6. Vigila `src/`, `wit/`, `Cargo.toml` y `Cargo.lock`; a cada cambio asienta
+5. Siembra un operador de desarrollo si la tabla de usuarios está vacía.
+6. Prepara el mundo de la app en `<wasm_dir>/<app>/` y publica el componente por
+   la misma ruta que `ferris serve`. En un bench el mundo es `apps/<app>/`; en un
+   sitio, `sites/<site>/plugins/<app>/`.
+7. Vigila `src/`, `wit/`, `Cargo.toml` y `Cargo.lock`; a cada cambio asienta
    250 ms de silencio y reconstruye una vez. Solo cuentan `.rs`, `.wit`, `.toml`
    y `.lock` que no sean ficheros temporales del editor.
 
@@ -79,14 +85,17 @@ marcha mediante `POST /__dev/reload-app?token=…` en loopback, sin reiniciar el
 proceso. Es el modo para tocar a la vez el Desk y la app.
 
 ```bash
-# recarga de la app, puerto 8000
-ferris dev
+# recarga de la app, puerto 8000, desde la raíz del bench
+ferris dev --app billing
 
 # Desk en 3000, abriendo el navegador
-ferris dev --port 3000 --open --hot-reload front
+ferris dev --app billing --port 3000 --open --hot-reload front
 
 # ambos, sin abrir navegador
-ferris dev --hot-reload both
+ferris dev --app billing --hot-reload both
+
+# dentro de la app, sin --app
+cd apps/billing && ferris dev
 ```
 
 ## Estilos en vivo
@@ -105,6 +114,7 @@ de `--hot-reload`: aplica también al modo `app`.
   recompilar la CLI; `front` los cubre solo para `ferris-web`.
 
 :::tip Proyecto en otro directorio
-`ferris --dir /srv/app dev` funciona igual: la CLI se coloca en el proyecto
-antes de detectarlo, así que `Cargo.toml`, `wit/` y `plugins/` se resuelven ahí.
+`ferris --dir /srv/bench/apps/billing dev` funciona igual: la CLI se coloca en el
+proyecto antes de detectarlo, así que `Cargo.toml`, `wit/` y el mundo se resuelven
+ahí. Desde la raíz de un bench con varias apps, usa `--app`.
 :::

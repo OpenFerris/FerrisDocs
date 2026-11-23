@@ -24,10 +24,11 @@ instalación es la misma que la de cualquier proyecto Rust.
 
 ### 2. Crea y arranca un proyecto
 
-`ferris new` genera un componente WIT/WASM con su `config/ferris.toml`, `ferris
-migrate` crea el esquema y `ferris dev` levanta API, Desk y realtime en un solo
-puerto. `ferris dev` además siembra un operador de desarrollo para que el login
-funcione sin configurar nada.
+`ferris new` construye un **bench**: la app en `apps/<name>/`, una única
+`config/ferris.toml`, el catálogo de apps y `sites/` para los despliegues.
+`ferris migrate` crea el esquema y `ferris dev --app <name>` levanta API, Desk y
+realtime en un solo puerto. `ferris dev` además siembra un operador de desarrollo
+para que el login funcione sin configurar nada.
 
 → [Inicio rápido](/getting-started/inicio-rapido/)
 
@@ -48,7 +49,7 @@ y por el Desk sin escribir HTML.
 | Metadatos | Registro de DocTypes y contrato de wire | `ferris-schema` |
 | API HTTP | REST, JSON-RPC, batch y GraphQL | `/api/*` |
 | Desk | Aplicación Leptos (SSR + hidratación) | `/desk`, `/login` |
-| Plugins | Apps WASM con capacidades declaradas | `plugins/<app>/` |
+| Plugins | Apps WASM con capacidades declaradas | `apps/<app>/`, `sites/<site>/plugins/<app>/` |
 | CLI | `new`, `dev`, `serve`, `migrate`, `doctor` | `ferris` |
 
 :::tip[Lee el código, no solo la guía]
@@ -70,7 +71,7 @@ gana el código: `ferris-api/src/router/routes.rs` es la tabla de rutas completa
 - **Operar en producción** → [operaciones](/operaciones/) y
   [features del host](/referencia/host-features/).
 
-:::caution[Estado 0.3.0 (pre-1.0)]
+:::caution[Estado 0.4.0 (pre-1.0)]
 Ferris todavía no es 1.0: hasta esa versión, una **minor** puede cambiar la API
 HTTP o el contrato de apps. Para algo de larga vida, fija un commit o un tag. La
 política completa está en [Versionado](/referencia/versionado/).

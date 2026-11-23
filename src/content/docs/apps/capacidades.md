@@ -21,7 +21,7 @@ redundante pero inocuo), no se configuran y no se pueden retirar:
 | `http` | HTTP saliente bajo `http-policy` y los topes del host |
 | `docstore-read` | `list-docs`, `get-docs`, `count-docs`, `aggregate-docs`, metadatos |
 | `docstore-write` | `write-doc`, `apply-ops`, `next-name` |
-| `filesystem` | el mundo propio, `plugins/<app>/` montado en `/world` |
+| `filesystem` | el mundo propio, `<wasm_dir>/<app>/` montado en `/world` |
 | `config` | claves de configuración no secretas de la app |
 | `schema` | introspección de metadatos de DocType |
 | `scheduler` | cron, `enqueue-job`, listar y cancelar schedules |

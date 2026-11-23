@@ -33,16 +33,17 @@ configuración pide un subsistema que este binario no compiló.
 
 ## `ferris doctor`
 
-Ejecuta once comprobaciones, en este orden, y devuelve un informe con `✓ PASS` /
+Ejecuta doce comprobaciones, en este orden, y devuelve un informe con `✓ PASS` /
 `✗ FAIL`, la marca `[CRITICAL]` y un resumen.
 
 | Chequeo | Crítico | Qué mira |
 |---|---|---|
 | `Rust toolchain` | sí | `rustc --version` funciona. |
 | `Cargo` | sí | `cargo --version` funciona. |
-| `Cargo.toml` | sí | Existe en el directorio actual. |
-| `Project structure` | sí | Existen `src/` y `config/`; avisa si falta `wit/ferris.wit`. |
-| `Config files` | sí | Existe `config/ferris.toml`. |
+| `Cargo.toml` | sí | Existe en el directorio actual, o el directorio es la raíz de un bench con `apps/`. |
+| `Project structure` | sí | En la raíz del bench exige `apps/` y `sites/`; dentro de una app exige `src/` y avisa si falta `wit/ferris.wit`. |
+| `Config files` | sí | Existe el `config/ferris.toml` que la CLI cargó. |
+| `WIT version` | sí | `wit/ferris.wit` declara la misma `package ferris:framework@<version>` que enlaza el binario. |
 | `Feature matrix` | sí | Lo compilado frente a lo que pide la configuración. |
 | `Database configuration` | según el caso | SQLite: pasa siempre y es crítico solo si el fichero ya existe. Servidores: crítico si conecta; si no conecta, falla sin ser crítico. |
 | `Redis` | no | Se salta como “not required: realtime is disabled”. Con realtime activo, hace `PING`. |
@@ -56,6 +57,13 @@ proceso no podría servir lo que la configuración declara. Un rol que la
 configuración pide pero un gate apaga se imprime como nota en el chequeo
 correcto, no como fallo, porque el servidor avisa y simplemente no arranca el
 rol.
+
+`WIT version` es crítico: una copia antigua del contrato compila sin errores y
+produce un componente que el host no puede instanciar, con un fallo de linker al
+arrancar. Dentro de una app, el chequeo compara la línea `package` de la copia
+con la versión que el binario enlaza y nombra el fichero a reemplazar. En la raíz
+del bench pasa sin comparar: cada app lleva su propio `wit/ferris.wit`, y se
+revisa al ejecutar `doctor` dentro de `apps/<app>/`.
 
 El comando no acepta flags propios (solo los globales) y termina con error si hay
 algún chequeo crítico en fallo (`N critical checks failed`).

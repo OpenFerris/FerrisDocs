@@ -80,10 +80,10 @@ vale para las tablas auxiliares `tab_series` (contadores de naming),
 
 ## Customizaciones de los mundos de plugin
 
-Después de las migraciones, `migrate` recorre `<apps.wasm_dir>` (por defecto
-`plugins/`) y, para cada mundo de app habilitada, lee
-`customizations/*.json` en orden de nombre de fichero y lo aplica a
-`tab_custom_field` y `tab_property_setter`. El fichero guarda el DocType dentro
+Después de las migraciones, `migrate` recorre los mundos de `<apps.wasm_dir>`
+(en un bench, `apps/`; en un `--standalone`, `plugins/`) y, para cada app
+habilitada, lee `customizations/*.json` en orden de nombre de fichero y lo aplica
+a `tab_custom_field` y `tab_property_setter`. El fichero guarda el DocType dentro
 del JSON (`doctype`, `fields`, `properties`), porque el nombre del fichero está
 saneado y no se puede invertir.
 
@@ -91,7 +91,7 @@ Esto es el modelo de *fixtures* de Frappe: la app es dueña del payload y la bas
 es una proyección. Se aplica en **migrate**, no en cada arranque, para que una
 personalización hecha en el Desk y aún no exportada no se revierta al reiniciar.
 Un fichero malformado falla la migración nombrando el fichero; no se salta en
-silencio. Si `plugins/` no existe, no es un error: un despliegue solo de
+silencio. Si el directorio no existe, no es un error: un despliegue solo de
 framework migra igual.
 
 ## Ejemplos

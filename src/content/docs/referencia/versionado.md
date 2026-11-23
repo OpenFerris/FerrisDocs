@@ -10,12 +10,12 @@ Ferris usa **un único número de versión**. Los dos workspaces lo declaran en 
 ```toml
 # FerrisCore/Cargo.toml y FerrisFramework/Cargo.toml
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 ```
 
 ```wit
 // ferris-wasm/wit/ferris.wit
-package ferris:framework@0.3.0;
+package ferris:framework@0.4.0;
 ```
 
 Las dos copias del contrato (`ferris-wasm/wit/ferris.wit` y
@@ -30,10 +30,10 @@ El número describe **compatibilidad**, no cantidad de cambios:
 
 | Cambio | Versión | Efecto en una app existente |
 |---|---|---|
-| Corrección, rendimiento, documentación, refactor interno | `0.3.0` → `0.3.1` | Ninguno: el WIT no cambia |
+| Corrección, rendimiento, documentación, refactor interno | `0.4.0` → `0.4.1` | Ninguno: el WIT no cambia |
 | Nueva capacidad del WIT, compatible hacia atrás (desde 1.0.0) | `1.0.0` → `1.1.0` | La app sigue instanciando; puede ignorar lo nuevo |
 | Ruptura (desde 1.0.0) | `1.1.0` → `2.0.0` | La app debe recompilarse y adaptarse |
-| Cualquier cambio mientras Ferris sea `0.x` | `0.3.0` → `0.4.0` | Pre-1.0: puede romper; fija un tag |
+| Cualquier cambio mientras Ferris sea `0.x` | `0.4.0` → `0.5.0` | Pre-1.0: puede romper; fija un tag |
 
 En otras palabras:
 
@@ -60,7 +60,7 @@ binario y el contrato WIT de ese tag son el contrato real de tu instalación.
 
 :::note[Por qué el WIT usa la misma versión que Cargo]
 Un componente se enlaza por el nombre completo de la interfaz, que incluye la
-versión (`ferris:framework/data@0.3.0`). Si el paquete WIT y el binario
+versión (`ferris:framework/data@0.4.0`). Si el paquete WIT y el binario
 declararan números distintos, el host y el guest hablarían de contratos
 diferentes aunque el código fuente fuera el mismo. Una sola cifra elimina esa
 clase de error.

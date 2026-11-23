@@ -6,10 +6,10 @@ description: Hot reload, logs útiles, los fallos que verás al cargar un compon
 ## `ferris dev` y la recarga
 
 ```bash
-ferris dev                      # recarga de la app (por defecto)
-ferris dev --hot-reload app     # recompila y sustituye el componente
-ferris dev --hot-reload front   # solo el Desk
-ferris dev --hot-reload both    # las dos cosas
+ferris dev --app mi-app          # recarga de la app (por defecto), desde la raíz del bench
+ferris dev --hot-reload app      # dentro de apps/mi-app/
+ferris dev --hot-reload front    # solo el Desk
+ferris dev --hot-reload both     # las dos cosas
 ```
 
 El modo `app` está pensado para el scaffold de Ferris: recompila el componente y
@@ -101,6 +101,10 @@ El host no la montó. Busca en el log `declared route not mounted` y comprueba:
 - que el `route-id` que esperas sea el que declaraste (o `plugins`, `api`,
   `page`, `method:<name>` para los espacios del host).
 
+Si la ruta responde `404` solo en `serve` y no en `dev`, no es la ruta: es el
+reenvío `/plugins/<app>/*`, que **solo existe en desarrollo**. En producción,
+usa la ruta declarada (por ejemplo `/apps/<app>`) o `/api/plugins/<app>/*`.
+
 ### 4. El método no responde
 
 ```text
@@ -142,10 +146,11 @@ host no compiló se registra y la app sigue cargando.
 curl -s localhost:8000/plugins/mi-app | jq .
 
 # ¿está el componente donde el host lo busca?
-ls -l plugins/mi-app.wasm plugins/mi-app/mi-app.wasm 2>/dev/null
+ls -l apps/mi-app/mi-app.wasm apps/mi-app/plugins/mi-app.wasm 2>/dev/null
+ls -l sites/acme/plugins/mi-app/mi-app.wasm 2>/dev/null
 
 # el mundo: lo que la app ha escrito
-find plugins/mi-app -maxdepth 2 -type f | sort
+find apps/mi-app -maxdepth 2 -type f | sort
 
 # ¿qué compiló el binario?
 ferris info
@@ -171,22 +176,27 @@ curl -s localhost:8000/plugins/mi-app \
 ferris doctor
 ```
 
-Comprueba toolchain, estructura del proyecto, ficheros de configuración, base de
-datos, Redis, target WASM y la matriz de features del host. No inspecciona el
-descriptor de una app: para eso está `/plugins/<app>`.
+Comprueba toolchain, layout del proyecto (bench o app), configuración, base de
+datos, Redis, target WASM, la matriz de features del host y que `wit/ferris.wit`
+declara la misma versión de `ferris:framework` que enlaza el binario. Un WIT
+antiguo compila y produce un componente que el host no instancia; `doctor` lo
+detecta antes del primer build. No inspecciona el descriptor de una app: para eso
+está `/plugins/<app>`.
 
 ## Checklist de aislamiento
 
 1. `ferris doctor` en verde.
-2. El `.wasm` está en `plugins/<app>.wasm` (la forma plana gana) y su nombre es
-   el de la app.
+2. El `.wasm` está en `apps/<app>/<app>.wasm` (bench) o en `plugins/<app>.wasm`
+   (layout plano), y su nombre es el de la app.
 3. `[apps] enabled` está vacío o contiene exactamente ese nombre.
 4. `/plugins/<app>` responde 200 y el descriptor lista lo que esperas.
 5. La ruta aparece en `.routes` **y** no hay línea de rechazo en el log.
-6. `platform::grants()` contiene lo que la llamada necesita; si no, el 403 lo
+6. En `serve`, usas la ruta declarada o `/api/plugins/<app>/*`, no
+   `/plugins/<app>/*`.
+7. `platform::grants()` contiene lo que la llamada necesita; si no, el 403 lo
    nombra.
-7. Para trabajos: el rol correspondiente está activo y la cola responde.
-8. El usuario con el que pruebas tiene permiso sobre el DocType; una app no es
+8. Para trabajos: el rol correspondiente está activo y la cola responde.
+9. El usuario con el que pruebas tiene permiso sobre el DocType; una app no es
    un administrador.
 
 :::caution[No borres la caché de build para “arreglar” algo]

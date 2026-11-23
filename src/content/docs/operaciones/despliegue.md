@@ -4,9 +4,13 @@ description: Targets de ferris deploy, Docker, Kubernetes, binario, proxy invers
 ---
 
 Una app Ferris se compone de dos artefactos distintos: el **servidor** (el
-binario `ferris`, que viene de una instalación de Ferris) y el **plugin** de la
-app (`plugins/<app>.wasm`, que produce `ferris build`). `ferris deploy` despliega
-el segundo; no construye el primero.
+binario `ferris`, que viene de una instalación de Ferris) y el **paquete de la
+app** (`<app>.wasm` + `plugin.toml` + `world/`, que produce `ferris build`).
+`ferris deploy` despliega el segundo; no construye el primero.
+
+En un bench, el paquete vive en `apps/<app>/` y se sirve copiándolo a un sitio
+con `ferris site install-app`. `ferris deploy` produce el layout plano
+(`plugins/<app>.wasm`) que un `--standalone` ya usa:
 
 ```bash
 ferris deploy --target docker --env production --registry registry.example.com
@@ -100,8 +104,9 @@ Puntos que un manifiesto debe resolver:
 - **Migraciones como Job previo**, no en el `entrypoint` de cada réplica.
 - **`external_url`** con el host público del Ingress, y secretos como `Secret`,
   no en el ConfigMap.
-- **Persistencia** para SQLite, ficheros locales y `plugins/<app>/`. Con varias
-  réplicas, usa PostgreSQL/MySQL y almacenamiento de objetos.
+- **Persistencia** para SQLite, ficheros locales, `<wasm_dir>/<app>/` (el mundo)
+  y `sites/<site>/` cuando hay sitios. Con varias réplicas, usa PostgreSQL/MySQL
+  y almacenamiento de objetos.
 
 ## `--target binary`
 
@@ -164,7 +169,9 @@ Rutas que el proxy debe reenviar sin reescribir:
 | `/socket.io/*` | WebSocket; requiere upgrade y `Connection: Upgrade`. |
 | `/events`, `/api/notifications/stream` | SSE; desactiva el buffering. |
 | `/static/*`, `/pkg/*` | Assets; deja pasar las cabeceras del servidor. |
-| `/plugins/*` | Rutas de apps WASM, incluidas descargas y assets. |
+| `/plugins/*` | Descriptor, assets y widgets de las apps. El reenvío genérico solo existe en desarrollo. |
+| `/api/plugins/*` | API declarada por las apps. |
+| Rutas declaradas | Cualquier `path` que una app declare en la raíz; el proxy reenvía `/` completo, así que no necesita conocerlas. |
 
 Los assets salen del mismo proceso; `ferris dev` los marca `no-store`.
 

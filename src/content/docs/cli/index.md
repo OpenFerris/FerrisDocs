@@ -38,29 +38,27 @@ artefacto es `/workspace/target/release/ferris`.
 
 ## Proyecto y directorio de trabajo
 
-Los comandos que operan sobre un proyecto (`migrate`, `doctor`, `dev`, `serve`)
-leen `config/ferris.toml` del directorio actual. Un proyecto creado con
-`ferris new` es un componente WASM independiente y no incluye la CLI, así que
-hay que entrar en su directorio y llamar al binario por ruta:
+Los comandos que operan sobre un proyecto leen la configuración del *bench*: el
+loader sube desde el directorio actual hasta encontrar `config/ferris.toml`, así
+que `ferris build` y `ferris dev` funcionan igual desde la raíz del bench o desde
+`apps/<app>/`. Un bench creado con `ferris new` **no** incluye la CLI: sus apps
+son componentes WIT/WASM que el servidor hospeda, y la CLI vive en la instalación
+del framework, así que se invoca por ruta desde el directorio del bench:
 
 ```bash
-docker compose run --rm --workdir /workspace/my-app \
+docker compose run --rm --workdir /workspace/bench \
   ferris /workspace/target/release/ferris doctor
 ```
 
 Los comandos que abren un puerto (`dev`, `serve`) necesitan publicarlo:
 
 ```bash
-docker compose run --rm --service-ports --workdir /workspace/my-app \
-  ferris /workspace/target/release/ferris dev
+docker compose run --rm --service-ports --workdir /workspace/bench \
+  ferris /workspace/target/release/ferris dev --app billing
 ```
 
 `--service-ports` aplica los mapeos declarados en `compose.yaml`; sin él, el
 contenedor escucha en su red interna pero el navegador del host no lo alcanza.
-
-Un proyecto creado con `ferris new` **no** incluye la CLI: genera un componente
-WIT/WASM (`cdylib` para `wasm32-wasip2`) que el servidor hospeda. La CLI vive en
-la instalación del framework.
 
 `ferris new` y `ferris generate --what wit` copian `ferris-wasm/wit/ferris.wit`
 desde la raíz del framework. Esa raíz se resuelve, por orden, con `FERRIS_HOME`,
@@ -93,8 +91,15 @@ vez, tras cargar la configuración.
 `CliConfig::load` resuelve el fichero así:
 
 1. `--config <FILE>`: se usa tal cual; si no existe, es un error.
-2. `--dir <DIR>`: `<DIR>/config/ferris.toml`.
-3. Sin flags: `<cwd>/config/ferris.toml`.
+2. `--dir <DIR>`: sube desde `<DIR>` hasta encontrar `config/ferris.toml`.
+3. Sin flags: igual, subiendo desde el directorio actual.
+
+Sin `--config`, la raíz encontrada se convierte en el *bench root*: el directorio
+que contiene `config/ferris.toml`, `apps/` y `sites/`. Por eso un comando
+ejecutado dentro de `apps/billing/` sigue leyendo la configuración del bench y
+escribe en el catálogo correcto. Con `--config`, el bench root es el padre del
+directorio `config/` que contiene el fichero, o el directorio actual si el
+fichero no vive en un `config/`.
 
 Si el fichero no existe y no se pidió explícitamente, el comando arranca con los
 valores por defecto y aplica variables de entorno; no es un error. Sobre el
@@ -128,13 +133,13 @@ devuelve su propio error con código 1, no el código del hijo.
 
 | Comando | Qué hace | Cuándo usarlo |
 |---|---|---|
-| [`ferris new`](/cli/new/) | Crea un proyecto WIT/WASM con config, toolchain y WIT. | Empezar una app. |
+| [`ferris new`](/cli/new/) | Crea un bench (`apps/` + `config/` + `sites/`) o una app `--standalone`. | Empezar un proyecto. |
 | [`ferris dev`](/cli/dev/) | Servidor de desarrollo con API, Desk y realtime, más recarga del plugin. | Programar la app. |
-| [`ferris serve`](/cli/serve-y-run/) | Servidor con roles elegidos por flags. | Arrancar una instancia concreta. |
+| [`ferris serve`](/cli/serve-y-run/) | Servidor con roles por flags, `--site` o `--all-sites`. | Arrancar una instancia concreta. |
 | [`ferris run`](/cli/serve-y-run/) | Servidor con los roles de `server.roles`. | Arrancar con la configuración del proyecto. |
-| [`ferris build`](/cli/build-y-deploy/) | Compila el componente y lo deja en `plugins/<app>.wasm`. | Publicar el artefacto. |
+| [`ferris build`](/cli/build-y-deploy/) | Compila el componente y escribe el paquete de catálogo en `apps/<app>/`. | Publicar el artefacto. |
 | [`ferris deploy`](/cli/build-y-deploy/) | Docker, Kubernetes, binario o serverless (no implementado). | Desplegar el artefacto. |
-| [`ferris app`](/cli/app/) | Instala, lista, habilita y retira componentes en `plugins/`. | Gestionar las apps publicadas. |
+| [`ferris app`](/cli/app/) | Instala, lista, habilita y retira apps del catálogo `apps/`. | Gestionar el catálogo global. |
 | [`ferris migrate`](/cli/migrate/) | Migraciones de esquema y customizaciones de mundos de plugin. | Preparar o actualizar la base. |
 | [`ferris generate`](/cli/generate/) | WIT, `schema.json`, tipos TypeScript y plantillas Typst. | Sincronizar artefactos derivados. |
 | [`ferris tenant`](/cli/tenant/) | Alta, baja y migración de tenants. | Multi-tenant. |

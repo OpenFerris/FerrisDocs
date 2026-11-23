@@ -179,6 +179,7 @@ export default defineConfig({
                 { label: 'Secretos', slug: 'configuracion/secretos' },
                 { label: 'Apps', slug: 'configuracion/apps' },
                 { label: 'Sitios', slug: 'configuracion/sites' },
+                { label: 'i18n y locales', slug: 'configuracion/i18n' },
               ],
             },
             {

@@ -4,7 +4,7 @@ description: Comandos exactos por toolchain para producir un componente del worl
 ---
 
 El host solo acepta un **componente WebAssembly** cuyo world sea
-`ferris:framework@0.3.0` / `ferris-app`. Un módulo core, un binario nativo o un
+`ferris:framework@0.4.0` / `ferris-app`. Un módulo core, un binario nativo o un
 componente de otro world no instancian.
 
 Elige tu toolchain; el resto del recorrido es idéntico.
@@ -38,11 +38,14 @@ cargo build --target wasm32-wasip2 --release
 
 Salida: `target/wasm32-wasip2/release/<nombre_del_crate>.wasm`. El nombre del
 crate usa guiones bajos donde el paquete usa guiones (`mi-app` →
-`mi_app.wasm`); el nombre de la **app** es el que le des al fichero en
-`plugins/`. En perfil de desarrollo la ruta es `debug/`.
+`mi_app.wasm`); el nombre de la **app** es el que le des al publicarlo. En perfil
+de desarrollo la ruta es `debug/`.
 
-`ferris build` hace lo mismo y copia el resultado a `plugins/<paquete>.wasm`.
-Guía completa: [Rust](/apps/languages/rust/).
+`ferris build --app <name>` hace lo mismo, escribe
+`apps/<name>/plugins/<paquete>.wasm` y el paquete de catálogo
+`apps/<name>/<paquete>.wasm` con `plugin.toml`, `world/` y `assets/`. En un
+`--standalone` todo queda en `plugins/`. Guía completa:
+[Rust](/apps/languages/rust/).
 
 ## Python 3.10+
 
@@ -142,7 +145,7 @@ wasm-tools component wit mi-app.wasm
 ```
 
 La primera comprueba la estructura del componente. La segunda imprime su world:
-debe listar los imports de `ferris:framework` con la versión `0.3.0` y los nueve
+debe listar los imports de `ferris:framework` con la versión `0.4.0` y los nueve
 exports. El world sintetizado puede llamarse `root`; el nombre del world no es lo
 que se valida, sino las interfaces y las firmas.
 
@@ -153,10 +156,10 @@ wasm-tools print mi-app.wasm | head -5
 
 ## Criterios de aceptación
 
-Antes de copiar el fichero a `plugins/`:
+Antes de publicar el fichero:
 
 - [ ] `wasm-tools validate` termina sin error.
-- [ ] `wasm-tools component wit` muestra los imports `ferris:framework/*@0.3.0`
+- [ ] `wasm-tools component wit` muestra los imports `ferris:framework/*@0.4.0`
       y los nueve exports del contrato.
 - [ ] están `describe`, `handle-request`, `doctype-event`, `handle-stream`,
       `handle-stream-event`, `handle-datagram`, `handle-job`, `ui-asset` y
@@ -170,14 +173,25 @@ Antes de copiar el fichero a `plugins/`:
 
 ## Después del build
 
+En un bench, el paquete que produce `ferris build`:
+
 ```text
-plugins/mi-app.wasm
+apps/mi-app/
+├── mi-app.wasm
+├── plugin.toml
+├── world/
+└── assets/
 ```
 
 ```toml
 [apps]
-wasm_dir = "plugins"
+wasm_dir = "apps"
 enabled = []
+```
+
+```bash
+ferris site install-app mi-app --site acme   # bench: copia el paquete a un sitio
+ferris app install mi-app.wasm               # registra un .wasm suelto en el catálogo
 ```
 
 ```bash

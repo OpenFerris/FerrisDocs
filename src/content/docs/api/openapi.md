@@ -15,7 +15,7 @@ lista de métodos registrados. Es OpenAPI **3.0.3**.
   "openapi": "3.0.3",
   "info": {
     "title": "Ferris API",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "description": "Ferris REST, JSON-RPC and batch API."
   },
   "x-ferris-methods": ["files.list"],
