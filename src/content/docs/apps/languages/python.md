@@ -128,7 +128,7 @@ wasm-tools validate app.wasm
 wasm-tools component wit app.wasm | head -20
 ```
 
-Deben aparecer los imports `ferris:framework/*@0.3.0` y los nueve exports.
+Deben aparecer los imports `ferris:framework/*@0.4.0` y los nueve exports.
 
 ## Limitaciones
 

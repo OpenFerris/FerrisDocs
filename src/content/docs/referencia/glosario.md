@@ -71,7 +71,7 @@ La fachada de acceso a datos del frontend. `DocStore::Server` en SSR,
 
 **WIT**
 WebAssembly Interface Types: el contrato estático entre el host y un plugin.
-Ferris publica `ferris:framework@0.3.0` en `ferris-wasm/wit/ferris.wit`, con
+Ferris publica `ferris:framework@0.4.0` en `ferris-wasm/wit/ferris.wit`, con
 seis interfaces: `types`, `data`, `schema`, `io`, `platform`, `descriptor`.
 
 **World** (mundo)

@@ -1,13 +1,13 @@
 ---
 title: Guías
-description: Recetas prácticas de Ferris 0.3.0 — presentación, trabajos, realtime, archivos, email, informes, integraciones y multi-tenant.
+description: Recetas prácticas de Ferris 0.4.0 — presentación, trabajos, realtime, archivos, email, informes, integraciones y multi-tenant.
 ---
 
 Cada guía resuelve un problema concreto con el código y la configuración reales de
-Ferris `0.3.0`. No son tutoriales de Rust: suponen que sabes leer un `Cargo.toml`
+Ferris `0.4.0`. No son tutoriales de Rust: suponen que sabes leer un `Cargo.toml`
 y que el proyecto ya arranca. Ferris tiene 21 crates repartidos en dos
 workspaces y se compila con Rust `1.98.1`; el contrato de plugins es
-`ferris:framework@0.3.0`.
+`ferris:framework@0.4.0`.
 
 ## Desk y presentación
 

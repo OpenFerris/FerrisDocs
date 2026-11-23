@@ -19,7 +19,7 @@ wasm-tools component wit mi-app.wasm
 ```
 
 La segunda orden imprime el world del componente. Debe listar los imports
-`ferris:framework/*@0.3.0` y los nueve exports; si no, el binario no es el que el
+`ferris:framework/*@0.4.0` y los nueve exports; si no, el binario no es el que el
 host espera.
 
 ## Paso 1 — Obtén el contrato
@@ -35,7 +35,7 @@ mi-app/
 
 El fichero es la fuente de verdad del contrato. No lo adaptes, no lo recortes y
 no le cambies el `package`: el host enlaza exactamente las interfaces de
-`ferris:framework@0.3.0`.
+`ferris:framework@0.4.0`.
 
 :::caution[No inventes el WIT]
 Un contrato parafraseado produce un componente que compila y no instancia. Si
@@ -165,7 +165,7 @@ wasm-tools component wit mi-app.wasm
 
 Criterios de aceptación:
 
-- valida sin errores y la salida importa `ferris:framework/*@0.3.0` (el world
+- valida sin errores y la salida importa `ferris:framework/*@0.4.0` (el world
   sintetizado puede llamarse `root`; lo que importa son las interfaces);
 - están los nueve exports (`describe`, `handle-request`, `doctype-event`,
   `handle-stream`, `handle-stream-event`, `handle-datagram`, `handle-job`,

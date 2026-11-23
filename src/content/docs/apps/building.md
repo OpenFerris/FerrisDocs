@@ -4,7 +4,7 @@ description: Comandos exactos por toolchain para producir un componente del worl
 ---
 
 El host solo acepta un **componente WebAssembly** cuyo world sea
-`ferris:framework@0.3.0` / `ferris-app`. Un módulo core, un binario nativo o un
+`ferris:framework@0.4.0` / `ferris-app`. Un módulo core, un binario nativo o un
 componente de otro world no instancian.
 
 Elige tu toolchain; el resto del recorrido es idéntico.
@@ -145,7 +145,7 @@ wasm-tools component wit mi-app.wasm
 ```
 
 La primera comprueba la estructura del componente. La segunda imprime su world:
-debe listar los imports de `ferris:framework` con la versión `0.3.0` y los nueve
+debe listar los imports de `ferris:framework` con la versión `0.4.0` y los nueve
 exports. El world sintetizado puede llamarse `root`; el nombre del world no es lo
 que se valida, sino las interfaces y las firmas.
 
@@ -159,7 +159,7 @@ wasm-tools print mi-app.wasm | head -5
 Antes de publicar el fichero:
 
 - [ ] `wasm-tools validate` termina sin error.
-- [ ] `wasm-tools component wit` muestra los imports `ferris:framework/*@0.3.0`
+- [ ] `wasm-tools component wit` muestra los imports `ferris:framework/*@0.4.0`
       y los nueve exports del contrato.
 - [ ] están `describe`, `handle-request`, `doctype-event`, `handle-stream`,
       `handle-stream-event`, `handle-datagram`, `handle-job`, `ui-asset` y

@@ -7,7 +7,7 @@ El contrato es un fichero WIT con una versión de paquete y un world. Todo lo
 demás —tu lenguaje, tu runtime, tu estructura de proyecto— es indiferente.
 
 ```wit
-package ferris:framework@0.3.0;
+package ferris:framework@0.4.0;
 
 world ferris-app {
     import types;
@@ -206,7 +206,7 @@ en [descriptor](/apps/descriptor/).
 ## Compatibilidad
 
 - **Misma versión de paquete.** El host enlaza las interfaces de
-  `ferris:framework@0.3.0`. Un componente compilado contra un paquete
+  `ferris:framework@0.4.0`. Un componente compilado contra un paquete
   incompatible no instancia: los nombres de import y export no coinciden.
   Desde `1.0.0`, un host de la misma major acepta componentes compilados contra
   una versión anterior; mientras Ferris esté en `0.x`, cada minor se trata como
@@ -228,7 +228,7 @@ en [descriptor](/apps/descriptor/).
 wasm-tools component wit mi-app.wasm
 ```
 
-Debe listar los imports de `ferris:framework` con la versión `0.3.0` y los nueve
+Debe listar los imports de `ferris:framework` con la versión `0.4.0` y los nueve
 exports. Si aparece otro paquete o faltan exports, el componente no es una app de
 Ferris aunque compile.
 

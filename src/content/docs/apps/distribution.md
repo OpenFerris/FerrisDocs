@@ -19,12 +19,22 @@ apps/mi-app/                 # catálogo global
 │   ├── data/
 │   ├── files/
 │   └── secrets/
-└── assets/                  # assets de UI
+├── assets/                  # assets de UI
+├── locales/                 # traducciones de la app (opcional)
+│   ├── en.toml
+│   └── es.toml
+└── docperm.toml             # permisos de sus DocTypes (opcional)
 ```
 
 `ferris build --app mi-app` escribe este paquete junto a las fuentes. Un
 `.wasm` suelto también se acepta en `ferris app install`; se envuelve en un
 paquete mínimo con versión `0.1.0` y un `world/` vacío.
+
+`locales/<tag>.toml` lleva los mensajes de la app y `descriptor.locales` los
+declara; ambos deben coincidir y `ferris app install` lo comprueba (tags, TOML,
+claves y tamaño). `ferris site install-app` copia la carpeta al sitio y el
+arranque la fusiona con los catálogos embebidos. Detalle en
+[i18n y locales](/configuracion/i18n/).
 
 El layout plano (`plugins/mi-app.wasm` + `plugins/mi-app/`) sigue siendo válido
 para un `--standalone`: el fichero plano gana si existen los dos, para que una

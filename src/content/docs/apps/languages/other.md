@@ -4,7 +4,7 @@ description: "C, C++, C#, Zig y cualquier toolchain propia: qué debe producir e
 ---
 
 El contrato no exige un lenguaje. Exige un **componente** del world
-`ferris:framework@0.3.0` / `ferris-app`. Si tu toolchain produce uno, sirve.
+`ferris:framework@0.4.0` / `ferris-app`. Si tu toolchain produce uno, sirve.
 
 ## La regla única
 
@@ -137,7 +137,7 @@ wasm-tools component wit mi-app.wasm
 
 Criterios de aceptación:
 
-- [ ] el componente importa `ferris:framework/*@0.3.0` y exporta las funciones
+- [ ] el componente importa `ferris:framework/*@0.4.0` y exporta las funciones
       del world `ferris-app`;
 - [ ] los nueve exports existen;
 - [ ] no hay imports fuera del contrato y WASI;

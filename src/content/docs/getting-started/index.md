@@ -71,7 +71,7 @@ gana el código: `ferris-api/src/router/routes.rs` es la tabla de rutas completa
 - **Operar en producción** → [operaciones](/operaciones/) y
   [features del host](/referencia/host-features/).
 
-:::caution[Estado 0.3.0 (pre-1.0)]
+:::caution[Estado 0.4.0 (pre-1.0)]
 Ferris todavía no es 1.0: hasta esa versión, una **minor** puede cambiar la API
 HTTP o el contrato de apps. Para algo de larga vida, fija un commit o un tag. La
 política completa está en [Versionado](/referencia/versionado/).

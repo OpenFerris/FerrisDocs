@@ -41,7 +41,7 @@ otro `worker,scheduler` contra la misma base de datos.
 
 ## Antes de desplegar
 
-1. **Fija la versión.** Ferris `0.3.0` es pre-1.0: hasta `1.0.0` una minor
+1. **Fija la versión.** Ferris `0.4.0` es pre-1.0: hasta `1.0.0` una minor
    puede cambiar la API o el contrato WIT. Fija un tag o un commit; la política
    está en [Versionado](/referencia/versionado/).
 2. **Elige las features.** `--features full` para todo, o una build mínima con

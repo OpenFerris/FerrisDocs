@@ -121,4 +121,4 @@ mismo con `desk.css` si cambiaste clases.
 
 ## Versiones
 
-Ferris `0.3.0`, Leptos `0.8`, Rust `1.98.1`. La edición es 2024.
+Ferris `0.4.0`, Leptos `0.8`, Rust `1.98.1`. La edición es 2024.

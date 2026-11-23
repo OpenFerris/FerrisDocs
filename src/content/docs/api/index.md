@@ -27,7 +27,7 @@ solo en el documento OpenAPI:
 curl -s http://localhost:8000/api/openapi.json | jq '.info'
 ```
 
-`info.version` es la versión del paquete (`0.3.0`). Un cambio incompatible se
+`info.version` es la versión del paquete (`0.4.0`). Un cambio incompatible se
 comunica con la versión del paquete y con el contrato WIT, no con un prefijo de
 URL.
 

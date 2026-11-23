@@ -4,7 +4,7 @@ description: Qué hace cada crate del workspace, de qué depende y por qué el g
 ---
 
 Ferris se distribuye en **dos workspaces** que comparten `resolver = "2"`,
-edición 2024 y versión `0.3.0`:
+edición 2024 y versión `0.4.0`:
 
 | Repositorio | Crates | Papel |
 |---|---:|---|

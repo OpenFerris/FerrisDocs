@@ -18,7 +18,7 @@ en [lenguajes](/apps/languages/).
 
 ## El contrato en una frase
 
-El paquete `ferris:framework@0.3.0` define seis interfaces de importación
+El paquete `ferris:framework@0.4.0` define seis interfaces de importación
 (`types`, `data`, `schema`, `io`, `platform`, `descriptor`) y nueve funciones de
 exportación. Todo lo que la app puede hacer entra por ahí, y todo lo que el host
 le pide sale por ahí.
