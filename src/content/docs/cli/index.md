@@ -41,9 +41,13 @@ artefacto es `/workspace/target/release/ferris`.
 Los comandos que operan sobre un proyecto leen la configuración del *bench*: el
 loader sube desde el directorio actual hasta encontrar `config/ferris.toml`, así
 que `ferris build` y `ferris dev` funcionan igual desde la raíz del bench o desde
-`apps/<app>/`. Un bench creado con `ferris new` **no** incluye la CLI: sus apps
-son componentes WIT/WASM que el servidor hospeda, y la CLI vive en la instalación
-del framework, así que se invoca por ruta desde el directorio del bench:
+`apps/<app>/`. El bench se crea con `ferris init` en una carpeta existente y los
+comandos disponibles dependen de dónde estés: `ferris --help` dentro de un
+sitio, de una app o de una carpeta sin inicializar muestra conjuntos distintos
+(ver [ferris init y contexto](/cli/init-y-contexto/)). Un bench **no** incluye la
+CLI: sus apps son componentes WIT/WASM que el servidor hospeda, y la CLI vive en
+la instalación del framework, así que se invoca por ruta desde el directorio del
+bench:
 
 ```bash
 docker compose run --rm --workdir /workspace/bench \
@@ -65,6 +69,19 @@ desde la raíz del framework. Esa raíz se resuelve, por orden, con `FERRIS_HOME
 el layout junto al ejecutable (`<prefix>/share/ferris`), `FERRIS_DATA_DIR`, el
 layout del workspace en tiempo de compilación y, como último recurso, la copia
 del WIT embebida en el binario, que se extrae a un directorio temporal.
+
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `ferris init` | Convierte una carpeta existente en bench (`config/`, `apps/`, `sites/`). |
+| `ferris new` | Crea una app en `apps/<nombre>`; `--standalone` crea un proyecto de una sola app fuera de un bench. |
+| `ferris site` | Crea, consulta, habilita, migra y borra sitios, e instala apps en ellos. |
+| `ferris app` | Gestiona el catálogo global de apps. |
+| `ferris dev` / `build` / `deploy` | Desarrollo, compilación y despliegue de una app. |
+| `ferris serve` / `run` | Sirve el bench, un sitio (`--site`) o todos (`--all-sites`). |
+| `ferris migrate` / `backup` / `restore` | Trabajan sobre la base y los ficheros del sitio donde estés, o del bench. |
+| `ferris doctor` / `info` / `config` | Diagnóstico y configuración del bench. |
 
 ## Flags globales
 

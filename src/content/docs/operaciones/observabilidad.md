@@ -70,14 +70,16 @@ Cada 300 segundos, un productor recorre los stores y escribe el modelo de
 lectura del Desk:
 
 - `Version`, una sola vez;
-- `System Health Report` y `Database Storage Usage by Tables`;
 - `RQ Job` / `RQ Worker` si la feature `jobs` está compilada;
-- `Scheduled Job Type` / `Scheduled Job Log` si `scheduler`;
-- `Prepared Report Analytics` si `report`.
+- `Scheduled Job Type` / `Scheduled Job Log` si `scheduler`.
 
 Los stores siguen siendo la fuente de verdad; las tablas del sistema son la
 proyección que se pinta en el Desk. Un mirror que falla se registra con `warn` y
 el tick siguiente lo reintenta.
+
+La salud y el uso de disco no se persisten: se calculan al pedirlos
+(`GET /api/system/health`, `GET /api/system/storage`), y los informes preparados
+se listan desde su store real (`GET /api/report/prepared`).
 
 ## Errores del cliente
 
@@ -194,7 +196,7 @@ LIMIT 20;
 ```
 
 Los nombres físicos de tabla son `tab` + el DocType sin espacios: `Path Log` →
-`"tabPathLog"`, `System Health Report` → `"tabSystemHealthReport"`. El motor
+`"tabPathLog"`, El motor
 cita el identificador, así que en PostgreSQL necesitas las comillas por la
 mayúscula; ajústalo a tu dialecto. `creation` es un entero de segundos Unix; los
 campos del documento, en cambio, viven dentro de la columna JSON `data`.

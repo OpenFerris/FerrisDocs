@@ -154,6 +154,7 @@ export default defineConfig({
               label: 'CLI',
               items: [
                 { label: 'Referencia de comandos', link: '/cli/' },
+                { label: 'ferris init y contexto', slug: 'cli/init-y-contexto' },
                 { label: 'ferris new', slug: 'cli/new' },
                 { label: 'ferris dev', slug: 'cli/dev' },
                 { label: 'ferris serve y run', slug: 'cli/serve-y-run' },

@@ -4,9 +4,10 @@ description: Crea un bench con apps/, config/ y sites/, o una app --standalone, 
 ---
 
 `ferris new` genera el esqueleto de una **app Ferris**: un crate `cdylib` que
-compila a `wasm32-wasip2` y se ejecuta como plugin dentro del servidor. Por
-defecto crea además el **bench** que la contiene: la carpeta `apps/`, la
-configuración única y `sites/`.
+compila a `wasm32-wasip2` y se ejecuta como plugin dentro del servidor. Se
+ejecuta **desde la raíz de un bench** creado con
+[`ferris init`](/cli/init-y-contexto/) y escribe la app en `apps/<nombre>`;
+fuera de un bench exige `--standalone` y crea un proyecto de una sola app.
 
 ```bash
 ferris new <name> [--into DIR] [--standalone]
@@ -36,14 +37,15 @@ configuración.
 
 ## Layout por defecto: bench
 
-El directorio de trabajo es la raíz del bench. `ferris new billing` crea:
+El directorio de trabajo es la raíz del bench (la que `ferris init` dejó con
+`config/ferris.toml`, `apps/` y `sites/`). `ferris new billing` añade la app:
 
 ```text
 <bench>/
 ├── .git/                  # un repositorio para todo el bench
 ├── .gitignore
 ├── config/
-│   └── ferris.toml        # config única (no se sobrescribe si ya existe)
+│   └── ferris.toml        # config única (creada por `ferris init`)
 ├── apps/
 │   └── billing/
 │       ├── .cargo/config.toml
@@ -56,8 +58,9 @@ El directorio de trabajo es la raíz del bench. `ferris new billing` crea:
 └── sites/
 ```
 
-Si ya existe un bench por encima del directorio actual, `ferris new` usa **ese**
-(`config/ferris.toml` encontrado al subir), no crea otro. El `.gitignore` del
+`ferris new` usa el bench que encuentre al subir (`config/ferris.toml`); no crea
+uno nuevo. Si no hay ninguno, falla y remite a `ferris init` (o a
+`--standalone`). El `.gitignore` del
 bench ignora `/sites/` y los datos de las apps, porque llevan credenciales y
 ficheros.
 
