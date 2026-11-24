@@ -30,7 +30,9 @@ sites/                              # FERRIS_SITES_DIR o <bench>/sites
     │       ├── data/
     │       ├── files/
     │       └── secrets/
-    ├── private/files/
+    ├── private/                    # 0700: no se publica
+    │   ├── <db>                    # base SQLite del sitio (si es SQLite)
+    │   └── files/                  # adjuntos privados
     └── public/files/
 
 apps/                               # ámbito GLOBAL (FERRIS_APPS_DIR)
@@ -44,6 +46,12 @@ apps/                               # ámbito GLOBAL (FERRIS_APPS_DIR)
     │   └── secrets/
     └── assets/
 ```
+
+La base de datos SQLite de un sitio vive en `private/<db>`, dentro de su propio
+directorio: se mueve con el sitio y `site delete` no deja el fichero en la raíz
+del bench. `site_config.json` guarda solo el nombre (`db_name`); la ruta se
+resuelve al abrir la base. Un sitio de un layout anterior, con el fichero en la
+raíz del bench, lo adopta en la primera apertura (también sus `-wal`/`-shm`).
 
 ## Los dos ámbitos
 

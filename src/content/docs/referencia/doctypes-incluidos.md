@@ -49,11 +49,12 @@ el esquema que usa el motor.
 
 | DocType | Para qué |
 |---|---|
-| `Data Import` / `Data Import Log` | Carga masiva y su registro de resultados |
-| `Data Export` | Exportación programada o guardada |
 | `Document Naming Rule` / `Document Naming Rule Condition` | Reglas de renombrado por condición |
 | `Document Naming Settings` (Single) | Ajustes globales de naming |
-| `Prepared Report` | Informe preparado en segundo plano |
+
+La importación, la exportación y la actualización masiva son acciones, no
+documentos: viven en `POST /api/data/import/{doctype}`,
+`GET /api/data/export/{doctype}` y `POST /api/data/bulk-update/{doctype}`.
 
 ## Desk — notificaciones, paneles y colaboración
 
@@ -66,7 +67,6 @@ el esquema que usa el motor.
 | `Desired State` | Configuración publicada por entidad para agentes de borde |
 | `ToDo` | Tarea rápida asociada a un documento |
 | `Tag` | Etiqueta; `Tag Link` es su tabla de unión interna |
-| `Bulk Update` | Actualización masiva de un campo en un conjunto de documentos |
 
 ## Users — identidad y permisos
 
@@ -75,14 +75,16 @@ el esquema que usa el motor.
 | `User` | Cuenta: email, username, roles, MFA, estado |
 | `Role`, `Has Role`, `User Type`, `Role Profile`, `Module Profile` | Modelo de roles y perfiles |
 | `User Group` | Agrupación de usuarios |
-| `User Permission`, `User Doctype Permissions` | Restricciones por usuario |
+| `User Permission` | Restricciones por usuario |
 | `DocPerm` / `Custom DocPerm` | Derechos por rol y DocType (el segundo los sobrescribe) |
 | `Session` | Sesión abierta (cookie `ferris_session`) |
 | `API Key` | Clave `Authorization: token <key>:<secret>` |
 | `Activity Log`, `Access Log` | Registro de acciones y accesos |
 | `User Invitation` | Invitación pendiente |
-| `Document Share Report`, `Permission Inspector`, `Permitted Documents For User` | Diagnóstico de quién ve qué |
-| `Role Permission Manager`, `Role Permission for Page and Report` | Constructor de permisos y permisos de páginas |
+
+El diagnóstico de permisos («quién ve qué», el constructor de roles y los
+permisos por página) sale del panel de permisos y de sus endpoints; no se guarda
+como DocType de informe.
 
 ## Email — correo
 
@@ -139,7 +141,6 @@ el esquema que usa el motor.
 | `Error Log`, `API Request Log`, `View Log`, `Path Log` | Diagnóstico y trazas |
 | `Version` | Historial de cambios de un documento (timeline) |
 | `RQ Job`, `RQ Worker`, `Scheduled Job Type`, `Scheduled Job Log` | Cola y scheduler |
-| `Prepared Report Analytics`, `Database Storage Usage By Tables`, `System Health Report` | Métricas de operación |
 
 :::caution[El catálogo depende de las features]
 `Email*` solo existe si se compiló `email`, `Print*` con `print`, y así con cada

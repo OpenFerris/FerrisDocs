@@ -19,32 +19,38 @@ El artefacto queda en `/workspace/target/release/ferris`, visible también en el
 host. La CLI no se instala dentro de cada app: se invoca por ruta absoluta desde
 el directorio del bench. La primera compilación tarda varios minutos.
 
-## 2. Crea el bench
+## 2. Inicializa el bench y crea la app
 
-El directorio de trabajo **es** el bench. `ferris new` crea la app bajo `apps/`,
-la configuración única y `sites/`, y hace `git init` en la raíz (no dentro de la
-app):
+El directorio de trabajo **es** el bench. Primero `ferris init` crea la
+estructura en una carpeta existente (configuración, `apps/`, `sites/`), y
+después `ferris new` añade la app bajo `apps/`:
 
 ```bash
 mkdir -p bench
+docker compose run --rm --workdir /workspace/bench \
+  ferris /workspace/target/release/ferris init
 docker compose run --rm --workdir /workspace/bench \
   ferris /workspace/target/release/ferris new billing
 ```
 
 ```text
 bench/
-├── .git/
 ├── config/ferris.toml     # una sola configuración para apps y sitios
 ├── apps/
 │   └── billing/           # el crate WIT/WASM
-└── sites/                 # despliegues; nace vacío
+└── sites/
+    └── common_site_config.json
 ```
 
-`ferris new` es atómico: si un paso falla, borra lo que había creado. Rechaza
-nombres que no empiecen por letra ASCII o que contengan algo distinto de letras,
-dígitos, `-` y `_`, y falla si el destino ya existe. Si necesitas el layout
-antiguo de una app autocontenida (`./billing/` con su propia configuración), usa
-`--standalone`; lo explica [ferris new](/cli/new/).
+`ferris init` no borra nada y se niega a ejecutarse si ya hay un bench. `ferris
+new` es atómico: si un paso falla, borra lo que había creado. Rechaza nombres
+que no empiecen por letra ASCII o que contengan algo distinto de letras,
+dígitos, `-` y `_`, y falla si el destino ya existe. Si necesitas una app
+autocontenida fuera de un bench (`./billing/` con su propia configuración), usa
+`ferris new billing --standalone`; lo explica [ferris new](/cli/new/).
+
+Los comandos disponibles dependen de dónde estés: la raíz del bench, un sitio o
+una app. [ferris init y contexto](/cli/init-y-contexto/) lo resume en una tabla.
 
 ## 3. Revisa `config/ferris.toml`
 
