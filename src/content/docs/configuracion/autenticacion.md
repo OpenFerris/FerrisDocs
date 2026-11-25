@@ -40,6 +40,12 @@ La política de contraseñas se aplica al crear una cuenta, al cambiarla y al
 confirmar un restablecimiento. Las cuatro clases de caracteres y la longitud
 mínima se comprueban juntas; un valor que no las cumple es un `400`.
 
+El `email` y el `username` de `User` son **únicos** (índices únicos): el login
+resuelve la cuenta por email y luego por usuario, y un restablecimiento busca
+por email, así que dos cuentas con la misma dirección harían que el acceso y el
+enlace de recuperación resolvieran una cuenta arbitraria. La segunda alta con
+un email o usuario ya tomado se rechaza como conflicto.
+
 :::caution[Qué lee `ferris serve`]
 `ferris serve` traslada al `AuthConfig` del núcleo todas las claves de esta
 sección: `password_*`, `session_timeout_minutes`, `session_idle_timeout_minutes`,

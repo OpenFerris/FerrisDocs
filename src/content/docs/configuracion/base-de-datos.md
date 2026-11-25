@@ -45,7 +45,8 @@ columnas; solo lo que no es columna queda en Rust.
 - **Búsqueda**: índice de texto completo por motor (`FTS5`, `GIN`/`tsvector`,
   `FULLTEXT`), creado de forma perezosa y mantenido en cada escritura. La
   búsqueda es por **tokens/frases**, no subcadena; si el índice no está
-  disponible, la lista cae al escaneo anterior.
+  disponible, la lista cae al escaneo anterior. Las columnas `Password` y
+  `Secret` no se indexan: un hash o un cifrado no es texto del documento.
 - **Escritura**: las columnas del documento y sus tablas hijas van en la misma
   transacción; la versión de auditoría es la segunda fila esperada, no un N+1.
 - **Logs**: cola acotada de 4096, lotes de 64/50 ms fuera del request path y
