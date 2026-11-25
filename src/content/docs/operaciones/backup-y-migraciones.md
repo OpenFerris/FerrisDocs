@@ -181,7 +181,6 @@ directorio distintos:
 createdb -h db.internal -U ferris erp_drill
 pg_restore --no-owner --no-acl --dbname=erp_drill /backup/erp-2026-11-20.dump
 
-export FERRIS_JWT_SECRET=...       # uno de pruebas, no el de producción
 export FERRIS_SECRET_KEY=...       # el real, o los Secret no se leen
 ferris --config /srv/drill/config/ferris.toml migrate --dry-run
 ferris --config /srv/drill/config/ferris.toml doctor

@@ -14,7 +14,7 @@ presentación: decide qué se valida al escribir y qué control dibuja el Desk.
 
 | Propiedad | Tipo | Para qué |
 |---|---|---|
-| `fieldname` | `String` | Nombre dentro del documento y del blob JSON. |
+| `fieldname` | `String` | Nombre dentro del documento y de su columna o clave en la tabla hija. |
 | `label` | `Option<String>` | Etiqueta visible; si falta, se usa el `fieldname`. |
 | `fieldtype` | `String` | Uno de los 47 nombres canónicos. |
 | `options` | `Option<String>` | Lista de un `Select`, DocType destino de un `Link`/`Table`, campo de un `Image`, endpoint de un `Button`. |

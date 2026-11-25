@@ -106,7 +106,7 @@ Desk.
 
 ## Naming
 
-El `name` es la clave primaria y también vive dentro del blob `data`. Se acuña
+El `name` es la clave primaria de la tabla. Se acuña
 según `naming_type`, que se resuelve una sola vez:
 
 ```rust
@@ -148,14 +148,17 @@ Un rol que no aparece no tiene ningún derecho: **deny por defecto**. Detalle en
 ## Relación con la tabla
 
 ```text
-DocType "ToDo"  ──▶  tabToDo (name, owner, docstatus, creation, modified, data)
-                     └─ data = {"name": "...", "title": "...", "status": "...", ...}
+DocType "ToDo"  ──▶  tabToDo (name, owner, docstatus, creation, modified,
+                            modified_by, amended_from, workflow_state,
+                            <una columna por campo>)
+                     └─ los campos `Table` van a su propia tabla hija
 ```
 
 La tabla se crea de dos formas y ambas comparten definición: `ferris migrate`
-genera la migración, y el motor hace `ensure_table` en la primera escritura. Los
-campos no tienen columna; viven en `data`. El
-[modelo de datos](/arquitectura/modelo-de-datos/) explica el porqué y sus
+genera la migración, y el motor hace `ensure_table` en la primera escritura. Cada
+campo declarado tiene su columna (o su tabla hija si es `Table`); el documento se
+reconstruye desde ellas, no desde un blob JSON. El
+[modelo de datos](/arquitectura/modelo-de-datos/) explica el esquema y sus
 consecuencias para índices y consultas.
 
 ## Cómo comprobar que existe

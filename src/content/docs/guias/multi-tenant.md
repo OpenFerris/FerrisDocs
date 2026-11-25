@@ -132,7 +132,7 @@ borrado accidental de configuración se reconstruye; uno de base de datos, no.
 | colas/schedules | sí | `redis_url` propio (o prefijo de cola) |
 | apps | sí | `enabled_apps` |
 | secretos de apps | sí | mundo `plugins/<app>/` por instalación |
-| sesiones | sí | `[auth] jwt_secret` por instalación |
+| sesiones | sí | `tab_session_store` en la base propia de la instalación |
 | código | no | el mismo binario para todos |
 
 Dos tenants en el **mismo** Redis comparten espacio de claves: usa bases de Redis
@@ -141,8 +141,9 @@ ver las claves de otro.
 
 ## Buenas prácticas
 
-- Un `jwt_secret` distinto por tenant. Compartirlo permite que una sesión de un
-  sitio valga en otro.
+- Una base de datos propia por tenant. La sesión vive en su
+  `tab_session_store`; compartir base permitiría que una cookie de un sitio
+  valga en otro.
 - Un directorio de ficheros por tenant, nunca uno compartido con prefijos: un
   fallo de validación de ruta se convierte en fuga entre clientes.
 - Migra **antes** de arrancar la instancia nueva; el arranque no migra.
@@ -157,6 +158,6 @@ ver las claves de otro.
       preserva).
 - [ ] La base existe antes de `create` (Postgres/MySQL).
 - [ ] `files_path` es escribible por el usuario del proceso.
-- [ ] El tenant tiene su propio `jwt_secret` y su propio espacio de Redis.
+- [ ] El tenant tiene su propia base de datos y su propio espacio de Redis.
 - [ ] `ferris tenant migrate` termina con código 0.
 - [ ] `enabled_apps` nombra apps que existen en el `wasm_dir` de esa instancia.

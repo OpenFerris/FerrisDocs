@@ -109,7 +109,7 @@ en el `Dockerfile` afecta a ambos y hay que reconstruir.
 
 | Servicio | Imagen | Puertos | Notas |
 |---|---|---|---|
-| `ferris` | `ferris-dev` (build local) | `8000`, `4321` | Shell de desarrollo; `FERRIS_JWT_SECRET` de desarrollo y `RUST_BACKTRACE=1` |
+| `ferris` | `ferris-dev` (build local) | `8000`, `4321` | Shell de desarrollo; `RUST_BACKTRACE=1` |
 | `postgres` | `postgres:17-alpine` | `5432` | Usuario, contraseña y base `ferris`; volumen `postgres-data` |
 | `redis` | `redis:7-alpine` | `6379` | Sin persistencia (`--save "" --appendonly no`) |
 

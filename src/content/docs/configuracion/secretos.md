@@ -56,6 +56,10 @@ contraseña SMTP, donde el conector necesita el valor real para firmar o
 autenticarse. Declarar esos campos como `Password` hace que toda integración lea
 `"********"` y falle en silencio.
 
+El secreto TOTP de MFA (`User.mfa_secret`) también es un `Secret`. Habilitar o
+rotar MFA exige, por tanto, la clave `[secrets]`; sin ella la operación falla con
+`KeyMissing` en vez de guardar el secreto en claro.
+
 El plaintext de un `Secret` solo se entrega a un contexto de motor que llamó a
 `reveal_secrets()`, y viaja envuelto en `SecretValue`, sin `Display` ni
 `Serialize` y con `Debug` redactado.
@@ -86,8 +90,8 @@ mientras quede una sola fila sin reescribir.
 - Una clave **ausente** no impide servir: se registra un aviso si el catálogo
   declara campos `Secret`; la primera escritura o revelación falla con
   `KeyMissing`.
-- `ferris doctor` comprueba la clave y escanea el blob almacenado en busca de
-  campos `Secret` que aún no sean un sobre cifrado.
+- `ferris doctor` comprueba la clave y escanea los documentos almacenados en busca
+  de campos `Secret` que aún no sean un sobre cifrado.
 
 `ferris config show` imprime la clave como `<redacted>`, igual que los secretos de
 proveedor, que también se enmascaran en `Debug` y en `ferris info`.

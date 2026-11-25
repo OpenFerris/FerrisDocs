@@ -47,7 +47,7 @@ bind_client_identity  →  require_auth_or_device  →  bind_ambient_user  →  
 
 - **`bind_client_identity`** extrae los datos del certificado de cliente ya
   verificado (mTLS) y los deja en las extensiones de la petición.
-- **`require_auth_or_device`** acepta sesión o bearer JWT. Acepta además un
+- **`require_auth_or_device`** acepta la cookie de sesión o una clave de API. Acepta además un
   certificado verificado **solo** en `/api/method/*`: en `/api/resource/*` un
   certificado nunca sustituye a un rol.
 - **`bind_ambient_user`** resuelve el usuario opcional y ejecuta el resto dentro
@@ -55,7 +55,7 @@ bind_client_identity  →  require_auth_or_device  →  bind_ambient_user  →  
   deniega (fail-closed); un dispositivo autenticado por certificado no tiene
   sesión, así que entra en ese caso.
 - **`require_csrf`** es interno al router de la API: con autenticación por cookie
-  de sesión, toda ruta mutante exige `X-CSRF-Token`. Bearer JWT y
+  de sesión, toda ruta mutante exige `X-CSRF-Token`. Las claves de API y
   `GET`/`HEAD`/`OPTIONS` están exentos. `/api/auth/login` y
   `/api/auth/mfa/verify` quedan fuera porque todavía no hay sesión que guarde el
   token; `/api/auth/logout` sí lo lleva, con su propia capa.
@@ -138,7 +138,7 @@ a `DocumentError::AlreadyExists` sin leer el texto del mensaje.
 | `Validation`, `AuthzError::InvalidPolicy` | `400` |
 | `DocumentError::AlreadyExists`, `WorkflowError::AlreadyExists`, `SchemaError::DuplicateField` | `409` |
 | `AuthError::TooManySessions` | `429` |
-| `AuthError(_)` | `401` (+ `WWW-Authenticate: Bearer`) |
+| `AuthError(_)` | `401` (sin `WWW-Authenticate`) |
 | `Authz(_)` | `403` |
 | `SingleNotCreatable` / `SingleNotDeletable` | `405` |
 | `JobError::Timeout` | `504` |

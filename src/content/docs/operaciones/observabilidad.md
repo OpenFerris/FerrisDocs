@@ -52,8 +52,10 @@ el estado final, incluidos `404`, `504` y timeouts.
 Las escrituras son *fire-and-forget*: un fallo al registrar se anota en `debug`
 y se descarta. Un log nunca debe tumbar la petición que describe.
 
-La IP se toma del primer salto de `X-Forwarded-For`, luego de `X-Real-IP`; sin
-proxy, queda vacía. No es un dato de autorización.
+La IP se toma de la conexión TCP (`ConnectInfo`). Hoy `[server] trusted_proxies`
+**no está cableado** en el CLI (pasa una lista vacía), así que `X-Forwarded-For` y
+`X-Real-IP` se ignoran: detrás de un proxy, la IP registrada es la del proxy. Es
+un dato informativo, nunca de autorización.
 
 Para apagar los registros HTTP:
 
@@ -153,6 +155,17 @@ ferris config show | jq .server
 JSON efectivo por stdout, con secretos redactados. El conjunto compilado se
 imprime por **stderr**, para que el pipe siga siendo JSON válido.
 
+## Cola y retención
+
+El logger de peticiones no escribe en el request path: encola el registro en una
+cola acotada (4096), y un worker escribe lotes de hasta 64 cada 50 ms. Si la
+cola se llena, el registro se descarta y se cuenta; la petición nunca espera a
+la base de datos.
+
+Una tarea diaria borra `Path Log` y `API Request Log` más antiguos que
+`FERRIS_LOG_RETENTION_DAYS` (por defecto 30; `0` desactiva). `Error Log` no se
+poda: es evidencia del operador.
+
 ## Health
 
 ```bash
@@ -183,11 +196,10 @@ llamada autenticada a la API o con `ferris doctor` en el pipeline.
 
 ```sql
 -- Ejemplo sobre PostgreSQL: rutas más lentas de la última hora.
--- Los campos del documento viven en la columna JSON `data`; solo name,
--- owner, docstatus, creation y modified son columnas propias.
-SELECT data->>'path' AS ruta,
-       avg((data->>'duration_ms')::int) AS media,
-       max((data->>'duration_ms')::int) AS peor
+-- Cada campo del documento es una columna real (no hay blob JSON `data`).
+SELECT path AS ruta,
+       avg(duration_ms) AS media,
+       max(duration_ms) AS peor
 FROM "tabPathLog"
 WHERE creation > extract(epoch FROM now()) - 3600
 GROUP BY 1
@@ -199,4 +211,4 @@ Los nombres físicos de tabla son `tab` + el DocType sin espacios: `Path Log` �
 `"tabPathLog"`, El motor
 cita el identificador, así que en PostgreSQL necesitas las comillas por la
 mayúscula; ajústalo a tu dialecto. `creation` es un entero de segundos Unix; los
-campos del documento, en cambio, viven dentro de la columna JSON `data`.
+campos del documento, en cambio, son columnas con el tipo nativo de su fieldtype.

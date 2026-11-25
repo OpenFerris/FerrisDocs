@@ -283,7 +283,7 @@ Node 22.23 o superior (lo exige Astro 7); el dev container trae Node 24.
    versiones. Si algo es un límite actual, descríbelo como límite, no como deuda.
 1. **Español claro.** Frases cortas, voz activa, sin jerga innecesaria.
 2. **Identificadores reales en `backticks`**: `[server]`, `enable_cors`,
-   `jwt_expiry_hours`, `ferris migrate`.
+   `session_timeout_minutes`, `ferris migrate`.
 3. **Sin promesas futuras.** Si algo no está implementado, se dice "no está
    implementado" o "hoy no se cablea". No "próximamente".
 4. **Sin APIs inventadas.** Cada endpoint, flag o campo debe existir en el

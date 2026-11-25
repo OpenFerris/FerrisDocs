@@ -32,21 +32,25 @@ ferris migrate [-t VERSION] [--dry-run] [--force]
    aplica migraciones **ni** customizaciones.
 5. Aplica las pendientes en orden ascendente de versión y registra versión y
    checksum de cada una. Un fallo se cuenta y el comando termina con error.
-6. Aplica las customizaciones de los mundos de plugin (ver más abajo).
+6. Materializa el esquema nativo de cada `DocType`: columnas de sistema, una
+   columna por campo declarado y una tabla real por campo `Table`
+   (`ensure_table`, idempotente). No hay blob que rellenar.
+7. Aplica las customizaciones de los mundos de plugin (ver más abajo).
 
 ## Qué contiene cada migración
 
 Cada DocType genera `create_table_<doctype>` con:
 
-- `CREATE TABLE tab<DocType>` con las columnas estándar
-  `name` (`VARCHAR(255)`, clave primaria), `owner`, `docstatus` (`SMALLINT`,
-  por defecto 0), `creation` y `modified` (`BIGINT`) y `data` (`TEXT NOT NULL`).
-  El documento completo vive en `data`; las otras columnas se duplican porque
-  son las que las listas ordenan y filtran.
+- `CREATE TABLE tab<DocType>` con las columnas de sistema `name`
+  (`VARCHAR(255)`, clave primaria), `owner`, `docstatus` (`SMALLINT`, por
+  defecto 0), `creation` y `modified` (`BIGINT`), `modified_by`,
+  `amended_from` y `workflow_state` (`VARCHAR(255)`), más una columna por campo
+  declarado y una tabla hija por campo `Table`. Las columnas y las tablas hijas
+  son la única fuente de verdad: el documento se reconstruye desde ellas, no hay
+  columna JSON `data`.
 - Los tres índices estándar: `idx_owner`, `idx_modified` e `idx_docstatus`.
 - Los índices declarados en `meta.indexes`. Si todos sus campos son columnas
-  reales, se crea un índice normal; si es un único campo que vive dentro de
-  `data`, se crea un índice de expresión JSON; una combinación de campos sin
+  reales, se crea un índice normal; un índice que dependa de un campo sin
   columna se omite, porque no tiene una forma portable.
 - `DROP TABLE IF EXISTS tab<DocType>` como `down_sql`.
 

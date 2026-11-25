@@ -37,7 +37,7 @@ La traducción vive en un único sitio (`ferris-api/src/router/error.rs`):
 | `JobError::Timeout` | `504` |
 | Todo lo demás | `500` |
 
-Los `401` añaden `WWW-Authenticate: Bearer` y `Cache-Control: no-store`. El
+Los `401` añaden `Cache-Control: no-store` (no hay reto `WWW-Authenticate`: la credencial es la cookie de sesión o la clave de API). El
 login y el MFA tienen su propio camino y añaden `Cache-Control: no-store` a sus
 `401`/`429`.
 

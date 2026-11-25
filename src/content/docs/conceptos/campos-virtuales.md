@@ -6,7 +6,7 @@ description: Campos que no se persisten, se calculan al leer y son de solo lectu
 Un **campo virtual** (Virtual DocField en Frappe) existe en la metadata pero no en
 el almacenamiento. Su valor se calcula cada vez que se lee el documento. Es la
 forma de exponer un dato derivado —un total, un estado calculado, una fila de otra
-fuente— sin duplicarlo en el blob ni mantenerlo sincronizado a mano.
+fuente— sin duplicarlo en una columna ni mantenerlo sincronizado a mano.
 
 ## La declaración
 
@@ -105,7 +105,7 @@ register_virtual_field("Invoice", "pending_lines", open_lines);
 ```
 
 El DocType hijo sigue declarándose con `is_child_table`; lo único distinto es que
-nadie lo escribe en el blob del padre.
+nadie lo persiste en el padre.
 
 ## Coste: se ejecuta por fila
 

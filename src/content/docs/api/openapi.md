@@ -4,10 +4,12 @@ description: Qué describe /api/openapi.json, qué queda fuera y cómo consumirl
 ---
 
 ```bash
-curl -s http://localhost:8000/api/openapi.json | jq
+# La ruta está bajo `require_auth`: usa la cookie de sesión o un API token.
+curl -s -b cookies.txt http://localhost:8000/api/openapi.json | jq
 ```
 
-El documento se genera en cada petición a partir de la versión del paquete y de la
+No es un endpoint público: sin sesión o token válido devuelve 401. El documento
+se genera en cada petición a partir de la versión del paquete y de la
 lista de métodos registrados. Es OpenAPI **3.0.3**.
 
 ```json

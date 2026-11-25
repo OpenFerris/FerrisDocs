@@ -133,9 +133,9 @@ filtrar por usuario. El motor no la aplica por ti: el método sustituye al base.
 |---|---|
 | tamaño por fichero | 50 MB (`max_file_size_mb`) |
 | extensiones | todas si la lista está vacía |
-| optimización de imagen | activa, calidad 85 |
+| optimización de imagen | **no aplicada**: el Desk sube con `optimize: false`; `[files] image_optimization` se lee pero no se usa |
 | subida | bytes crudos, sin multipart |
-| chunks temporales | `ferris-files/tus_uploads/`, no se versiona |
+| subida reanudable | **no implementada** (no hay tus; el directorio `tus_uploads/` no existe) |
 
 Subir un fichero mayor que el límite es un `validation-failed` (422), no un
 corte de conexión silencioso.

@@ -144,17 +144,13 @@ Con varias apps bajo `apps/`, `--app` es obligatorio o hay que entrar en
 de la app, sin `--app`. El recorrido completo, con migración y sitio, está en
 [inicio rápido](/getting-started/inicio-rapido/).
 
-:::tip Secreto JWT de desarrollo
-La configuración que escribe el scaffold **no** incluye `[auth] jwt_secret`, y
-`serve`/`run` lo exigen para firmar sesiones. `ferris dev` es la excepción: si
-falta, genera un secreto efímero solo en memoria y avisa. Para conservar sesiones
-(y para `ferris serve`), define uno estable:
-
-```bash
-export FERRIS_JWT_SECRET="$(openssl rand -hex 32)"
-```
-
-O escríbelo con `ferris config set auth.jwt_secret "<valor>"`.
+:::tip Sesiones sin secreto de firma
+La configuración que escribe el scaffold no necesita ningún secreto de sesión:
+`serve`, `run` y `dev` usan `tower-sessions` sobre `tab_session_store` y una
+cookie `ferris_session` (o `__Host-ferris_session` cuando hay TLS o
+`external_url` es HTTPS). Las sesiones
+sobreviven a un reinicio porque viven en la base de datos, no en un token
+firmado.
 :::
 
 :::tip Si rustup no tiene el target

@@ -121,12 +121,12 @@ fichero no vive en un `config/`.
 Si el fichero no existe y no se pidió explícitamente, el comando arranca con los
 valores por defecto y aplica variables de entorno; no es un error. Sobre el
 fichero cargado se aplican siempre los *overrides* de entorno (`DATABASE_URL`,
-`REDIS_URL`, `FERRIS_JWT_SECRET`, `SERVER_HOST`, `SERVER_PORT`,
+`REDIS_URL`, `SERVER_HOST`, `SERVER_PORT`,
 `FERRIS_REALTIME`, `FERRIS_UNLOCK_SOURCE`, `FERRIS_TLS_*`, `FERRIS_CA_*`, …).
 
 Dos comprobaciones ocurren en cada arranque, para cualquier comando:
 
-- un `[auth] jwt_secret` igual a `change-me-in-production` es un error duro;
+- la política de contraseñas y MFA se valida al cargar `[auth]`;
 - una `[secrets] key` malformada es fatal, porque nada escrito en esa ejecución
   podría descifrarse después.
 

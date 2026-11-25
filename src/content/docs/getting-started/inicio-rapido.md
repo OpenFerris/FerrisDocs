@@ -157,7 +157,6 @@ Dentro del contenedor, en la raíz del bench:
 ```bash
 export FERRIS=/workspace/target/release/ferris
 export FERRIS_ADMIN_PASSWORD='cambia-esta-clave'
-export FERRIS_JWT_SECRET="$(openssl rand -hex 32)"
 
 $FERRIS build --app billing
 $FERRIS site new acme --host acme.localhost --db-type sqlite \

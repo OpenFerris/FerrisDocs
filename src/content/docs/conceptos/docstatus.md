@@ -49,8 +49,8 @@ No hay `Draft → Cancelled`, ni `Submitted → Draft` directo, ni
 ## Qué significa "enviado"
 
 Un DocType solo tiene ciclo de vida si declara `is_submittable`. En uno que no lo
-declare, `docstatus` existe igualmente en la tabla y en el blob, pero las
-transiciones no forman parte del modelo de negocio y los permisos
+declare, la columna `docstatus` existe igualmente, pero las transiciones no forman
+parte del modelo de negocio y los permisos
 `Submit`/`Cancel` no se conceden (la traducción de `DocPerm` los elimina cuando el
 DocType no es submittable). El motor no comprueba el flag por sí mismo: quien lo
 hace cumplir es la concesión de permisos, y `System Manager` se la salta.
@@ -140,24 +140,21 @@ difiere. Enviar el mismo valor es el no-op que es.
 
 ## Representación en disco y en JSON
 
-Hay dos representaciones y las escribe el mismo valor:
+Hay dos representaciones del mismo valor:
 
 | Sitio | Forma |
 |---|---|
 | Columna `docstatus` | `SMALLINT` (`0`, `1`, `2`), `NOT NULL DEFAULT 0` |
-| Blob `data` | Palabra: `"draft"`, `"submitted"`, `"cancelled"` |
+| Documento en JSON (API, hooks y plugins) | Palabra: `"draft"`, `"submitted"`, `"cancelled"` |
 
 ```sql
--- columna
+-- en disco
 SELECT name, docstatus FROM tabInvoice WHERE docstatus = 1;
-
--- blob
-SELECT data FROM tabInvoice WHERE name = 'INV-0001';
--- { "docstatus": "submitted", ... }
 ```
 
-Filtrar por la columna es lo correcto para listas y recuentos: tiene índice
-(`idx_docstatus`). El blob es la forma que viaja por la API.
+Las dos salen del mismo valor: el documento reconstruido desde columnas expone la
+palabra al exterior. Filtrar por la columna es lo correcto para listas y
+recuentos: tiene índice (`idx_docstatus`).
 
 ## Permisos por acción
 

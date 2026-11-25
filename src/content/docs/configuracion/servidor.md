@@ -140,8 +140,9 @@ La CA nunca se entrega a un plugin; solo el material emitido. Por entorno:
 ## URL pública
 
 `external_url` es el origen con el que se construyen URLs absolutas que salen
-del proceso, hoy las de OAuth: `${external_url}/api/oauth/{provider}/callback`.
-Se escribe como `external_url = "https://erp.example.com"` en `[server]`.
+del proceso (hoy las de OAuth: `${external_url}/api/oauth/{provider}/callback`)
+y la señal para marcar la cookie de sesión como `Secure`. Se escribe como
+`external_url = "https://erp.example.com"` en `[server]`.
 
 Sin `external_url`, Ferris usa el `host:port` de bind y el esquema que implica
 TLS. Eso solo es correcto en local: detrás de un proxy, o con bind `0.0.0.0`,
@@ -149,9 +150,10 @@ el proveedor rechaza el callback. El arranque avisa cuando detecta ese caso.
 
 :::danger
 Si publicas Ferris detrás de un proxy y el navegador llega por HTTPS, configura
-`external_url`. Además, las cookies de sesión solo se marcan `Secure` cuando
-`[server.tls]` existe; con TLS terminado fuera del proceso, esa marca no se
-activa.
+`external_url` con el origen `https://`. Ese valor basta para que la cookie sea
+`__Host-ferris_session` con `Secure`; no hace falta que el proceso termine TLS.
+Sin él, la cookie se emite como `ferris_session` sin `Secure` y viajaría por un
+transporte inseguro.
 :::
 
 ## Ejemplos
@@ -166,8 +168,8 @@ roles = ["api", "web", "realtime"]
 enable_cors = false
 ```
 
-Con este perfil, `ferris dev` arranca: toma `[auth] jwt_secret` o
-`FERRIS_JWT_SECRET` si están definidos y, si no, genera uno efímero en memoria.
+Con este perfil, `ferris dev` arranca sin ningún secreto de sesión: la cookie es
+`ferris_session` (sin `Secure`) y el registro vive en `tab_session_store`.
 
 ### Producción con TLS en el proceso
 
@@ -195,5 +197,5 @@ ca_key_path = "/etc/ferris/pki/ca-key.pem"
 
 Un `serve` falla, con mensaje, cuando la matriz `[features]` pide algo
 que el binario no compiló, `[features]` deja la lista de roles vacía,
-`tls.require_client_cert` no tiene `client_ca_path`, falta el secreto JWT o
-`[server.pki]` apunta a una clave que `ring` no puede usar.
+`tls.require_client_cert` no tiene `client_ca_path` o `[server.pki]` apunta a
+una clave que `ring` no puede usar.

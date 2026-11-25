@@ -101,7 +101,7 @@ variables de entorno) como JSON en `stdout`, y la línea
 
 Se redactan:
 
-- las claves con nombre sensible (`password`, `passwd`, `secret`, `jwt_secret`,
+- las claves con nombre sensible (`password`, `passwd`, `secret`,
   `token`, `access_token`, `refresh_token`, `api_key`, `private_key`,
   `signing_key`), también dentro de `custom`;
 - `redis.url` completa, porque el userinfo lleva la contraseña.
