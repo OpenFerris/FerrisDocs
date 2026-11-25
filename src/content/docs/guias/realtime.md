@@ -3,9 +3,11 @@ title: Realtime
 description: WebSocket con socket.io, eventos de documento, salas, pubsub desde una app y reconexión.
 ---
 
-El Desk usa **socket.io** para empujar cambios sin recargar. El rol `realtime`
-arranca ese servidor; sin él, el Desk sigue funcionando pero pierde la
-actualización en vivo.
+El rol `realtime` monta **socket.io** en el listener principal, bajo
+`/socket.io`. El Desk **no** trae cliente socket.io todavía: sus notificaciones
+van por SSE y las listas/formularios no se refrescan por eventos. Este motor
+sirve hoy a clientes externos y es la base de la futura actualización en vivo
+del Desk.
 
 ## Configuración
 
@@ -15,15 +17,13 @@ roles = ["api", "web", "realtime"]
 cors_origins = ["https://desk.example.com"]
 
 [realtime]
-host = "0.0.0.0"
-port = 8001
 ping_interval_secs = 25
 ping_timeout_secs = 60
 ```
 
 | Clave | Efecto |
 |---|---|
-| `host` / `port` | listener del gateway (por defecto `0.0.0.0:8001`) |
+| `host` / `port` | reservados: hoy no abren un listener propio; `/socket.io` vive en el listener principal |
 | `ping_interval_secs` | cada cuánto late el servidor |
 | `ping_timeout_secs` | cuánto espera antes de dar la conexión por muerta |
 | `[server] cors_origins` | orígenes permitidos en el handshake |
@@ -42,7 +42,8 @@ arranque falla diciendo qué recompilar; no se ignora.
 import { io } from "socket.io-client";
 
 // La sesión viaja en la cookie: el gateway la resuelve y autoriza la sala.
-const socket = io("http://localhost:8001", { withCredentials: true });
+// Mismo origen que el sitio: no hay un puerto 8001 separado.
+const socket = io({ withCredentials: true });
 
 socket.on("connect", () => {
   // Sala de DocType: requiere permiso de lectura; si no, llega `subscribe-error`.

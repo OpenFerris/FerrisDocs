@@ -49,7 +49,8 @@ otro `worker,scheduler` contra la misma base de datos.
    arranca.
 3. **Decide el motor.** SQLite para una instalación pequeña y un solo proceso;
    PostgreSQL o MySQL para concurrencia, backups en caliente y varias instancias.
-4. **Genera el secreto JWT.** Al menos 32 caracteres, fuera del repositorio.
+4. **Decide el almacén de sesiones.** `tab_session_store` vive en la misma base;
+   para varias réplicas, comparte la base y no un almacén en memoria.
 5. **Configura TLS.** En el proceso (`[server.tls]`) o en el proxy, con
    `external_url` correcto.
 6. **Migra antes de servir.** `ferris migrate` es un paso de despliegue, no algo
@@ -58,7 +59,6 @@ otro `worker,scheduler` contra la misma base de datos.
 
 ## Checklist de producción
 
-- [ ] `FERRIS_JWT_SECRET` de 32+ caracteres, inyectado por entorno.
 - [ ] `[secrets] key` (o `FERRIS_SECRET_KEY`) configurada y respaldada aparte.
 - [ ] `[database] ssl_mode = "verify-full"` si la base no está en el mismo host.
 - [ ] `[server] external_url` con el origen público real.

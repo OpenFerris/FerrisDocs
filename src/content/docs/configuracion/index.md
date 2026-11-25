@@ -76,7 +76,6 @@ tabla de abajo; el resto se configura en el fichero.
 |---|---|
 | `DATABASE_URL` | Se parsea a `[database]` solo para `postgres://`/`postgresql://`; el valor crudo queda en `custom.database_url`. |
 | `REDIS_URL` | Sustituye `[redis] url`. |
-| `FERRIS_JWT_SECRET` / `JWT_SECRET` | Sustituye `[auth] jwt_secret`. |
 | `FERRIS_SECRET_KEY` / `FERRIS_SECRETS__KEY` | Clave de los campos `Secret`. |
 | `FERRIS_SECRET_PREVIOUS_KEYS` | Claves anteriores, separadas por comas. |
 | `SERVER_HOST`, `SERVER_PORT` | Sustituyen `[server] host` y `port`. |
@@ -100,7 +99,7 @@ aborta el arranque.
 | `[database]` | Motor, conexión, pool y modo SSL. | [Base de datos](/configuracion/base-de-datos/) |
 | `[redis]` | URL y conexiones para la cola de trabajos. | [Servicios](/configuracion/servicios/) |
 | `[server]` | Listener, roles, límites, CORS, TLS, PKI y URL pública. | [Servidor](/configuracion/servidor/) |
-| `[auth]` | JWT, sesiones, política de contraseñas, MFA y OAuth. | [Autenticación](/configuracion/autenticacion/) |
+| `[auth]` | Sesiones, política de contraseñas, MFA y OAuth. | [Autenticación](/configuracion/autenticacion/) |
 | `[files]` | Backend de ficheros y límites de subida. | [Servicios](/configuracion/servicios/) |
 | `[email]` | Cuentas SMTP/IMAP y política de la cola. | [Servicios](/configuracion/servicios/) |
 | `[search]` | Ajustes del servicio de búsqueda. | [Servicios](/configuracion/servicios/) |
@@ -127,7 +126,7 @@ ficheros, Redis y apps por sitio en `sites/<site>/`: ver
 `ferris config show` imprime la configuración efectiva en JSON con estos
 nombres de clave sustituidos por `<redacted>` en cualquier profundidad:
 
-`password`, `passwd`, `secret`, `jwt_secret`, `token`, `access_token`,
+`password`, `passwd`, `secret`, `token`, `access_token`,
 `refresh_token`, `api_key`, `private_key`, `signing_key`.
 
 Además, la contraseña embebida en una URL (`redis://user:clave@host`) se
@@ -174,14 +173,12 @@ supported = ["en", "es"]
 ```
 
 ```bash
-export FERRIS_JWT_SECRET="$(openssl rand -hex 32)"
 ferris migrate
 ferris serve
 ```
 
-Sin `[auth] jwt_secret` y sin `FERRIS_JWT_SECRET`, `serve` y `run` fallan al
-arrancar. `ferris dev` es la excepción: genera un secreto efímero solo en memoria
-y avisa de que las sesiones no sobreviven a un reinicio.
+No hay secreto de firma que configurar: las sesiones viven en
+`tab_session_store` y la cookie se genera al iniciar sesión.
 
 ## Comprobar la configuración
 

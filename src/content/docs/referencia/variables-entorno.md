@@ -7,7 +7,7 @@ La configuración vive en `config/ferris.toml` (o `ferris.yaml`), pero el proces
 lee variables de entorno para dos cosas: **inyección de contenedor** (secretos,
 rutas, puertos) y **overrides** de un despliegue.
 
-Precedencia, de menor a mayor:
+Precedencia que implementa `ferris_core::Config::load*`:
 
 ```text
 ferris.toml  →  ferris.yaml  →  entorno FERRIS_* (con __ como separador)
@@ -16,16 +16,21 @@ ferris.toml  →  ferris.yaml  →  entorno FERRIS_* (con __ como separador)
 Un fichero ausente no es un error; un directorio de configuración ausente sí
 (`ConfigError::NotFound`).
 
-El **CLI** usa un loader propio (`CliConfig`) que lee `config/ferris.toml` y un
-subconjunto explícito de variables. El **servidor** usa `ferris_core::Config`,
-que sí aplica el overlay genérico `FERRIS_*` con `__` como separador. Las dos
-tablas de abajo marcan cuál es cuál.
+:::caution[Estado actual: API de librería, no del binario]
+Ese loader existe en `ferris_core`, pero el binario `ferris` **todavía no lo
+usa**. `ferris serve` construye la configuración desde `CliConfig` y lee una
+lista cerrada de variables (las de las tablas de abajo). `ferris.yaml` y el
+overlay genérico `FERRIS_*__*` solo funcionan si embebes
+`ferris_core::Config::load_from` en tu propio programa. Cablearlo en el CLI
+está planificado; hasta entonces, no cuentes con ellos desde `ferris serve`.
+:::
 
 ## Selección de configuración
 
 | Variable | Efecto | Default |
 |---|---|---|
 | `FERRIS_CONFIG_DIR` | Directorio de configuración a cargar | `dirs::config_dir()/ferris` |
+| `FERRIS_LOG_RETENTION_DAYS` | Días que se conservan `Path Log` y `API Request Log`; `0` desactiva | `30` |
 | `FERRIS_PROJECT_DIR` | Raíz del proyecto; de ella cuelgan `apps/`, `plugins/` y `sites/` | directorio actual |
 | `FERRIS_PLUGINS_DIR` | Fuerza el directorio de plugins/worlds | `<project>/plugins` |
 | `FERRIS_APPS_DIR` | Catálogo global de apps | `<project>/apps` |
@@ -39,8 +44,10 @@ falla en vez de buscar en otro sitio.
 
 ## Acceso genérico a la configuración
 
-El servidor (`ferris_core::Config`) permite sobrescribir cualquier clave con
-`FERRIS_` y `__` como separador de nivel:
+La API de librería (`ferris_core::Config::load_from`) permite sobrescribir
+cualquier clave con `FERRIS_` y `__` como separador de nivel. Esto **no** lo
+aplica hoy el binario `ferris`; es el contrato para un programa que embeba el
+servidor y llame al loader:
 
 ```bash
 export FERRIS_DATABASE__TYPE=postgres
@@ -102,24 +109,16 @@ leer el fichero; no se desactiva TLS en silencio.
 
 | Variable | Efecto | Notas |
 |---|---|---|
-| `FERRIS_JWT_SECRET` (o `JWT_SECRET`) | Secreto HS256 | Mínimo 32 caracteres; `change-me-in-production` se rechaza |
 | `FERRIS_SECRET_KEY` (o `FERRIS_SECRETS__KEY`) | Clave de cifrado de campos `Secret` (AES-256-GCM) | Ambas grafías funcionan |
 | `FERRIS_SECRET_PREVIOUS_KEYS` | Claves anteriores, separadas por comas | Permiten descifrar valores cifrados con ellas |
 | `FERRIS_ADMIN_PASSWORD` | Contraseña del admin para `ferris tenant create` | Evita pasarla por argv |
 | `FERRIS_UNLOCK_SOURCE` | `true` desbloquea el modo fuente del CLI | Booleano; un valor inválido se ignora |
 
-:::danger[El secreto JWT no tiene default]
-Sin `FERRIS_JWT_SECRET`/`JWT_SECRET` no hay firma utilizable. `serve`/`run`
-fallan al arrancar si falta; `ferris dev` genera un secreto efímero en memoria
-para el front. El placeholder `change-me-in-production` se rechaza
-explícitamente.
-
-El `compose.yaml` de desarrollo inyecta un valor conocido
-(`dev-only-change-me-…`) para que los comandos del contenedor funcionen sin
-configuración. Ese valor es público: expórtalo con uno propio antes de usar
-`serve` en cualquier host alcanzable. La comprobación de arranque actual rechaza
-solo `change-me-in-production`; el resto de valores, incluido el del compose, se
-aceptan.
+:::note[Sin secreto de sesión]
+No hay `FERRIS_JWT_SECRET`: la sesión es una cookie respaldada por
+`tab_session_store`. `serve`, `run` y `dev` arrancan sin ninguna variable de
+autenticación. Lo único que hay que proteger es `FERRIS_SECRET_KEY`, que cifra
+los campos `Secret`.
 :::
 
 ## Interruptores de features

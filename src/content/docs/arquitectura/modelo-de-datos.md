@@ -3,11 +3,11 @@ title: Modelo de datos
 description: Cómo se guarda un documento en la base de datos, qué es la metadata compilada y qué se indexa de verdad.
 ---
 
-Ferris guarda cada DocType en una tabla propia con **columnas fijas** y un blob
-JSON. No hay una columna por campo: el esquema físico es idéntico para un DocType
-compilado con `#[doctype]`, uno declarado por un plugin y uno ampliado con custom
-fields. Esa uniformidad es lo que permite añadir un campo sin una migración de
-columna y tratar igual todas las fuentes de metadata.
+Ferris guarda cada DocType en una tabla propia con **columnas reales**: las de
+sistema, una por campo declarado y una tabla hija por campo `Table`. No hay blob
+JSON por documento: el documento se **reconstruye** desde esas columnas y filas
+hijas. Esa uniformidad es lo que permite tratar igual un DocType compilado con
+`#[doctype]`, uno declarado por un plugin y uno ampliado con custom fields.
 
 ## La tabla: `tab<DocType>`
 
@@ -34,7 +34,7 @@ El DocType `Document Naming Rule` es un buen recordatorio: su tabla es
 
 ## Columnas estándar
 
-`ferris_schema::migration::document_columns()` define exactamente seis:
+`ferris_schema::migration::document_columns()` define exactamente ocho:
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -43,63 +43,52 @@ El DocType `Document Naming Rule` es un buen recordatorio: su tabla es
 | `docstatus` | `SMALLINT` | `NOT NULL DEFAULT 0`. |
 | `creation` | `BIGINT` | `NOT NULL`. Timestamp Unix. |
 | `modified` | `BIGINT` | `NOT NULL`. Timestamp Unix. |
-| `data` | `TEXT` | `NOT NULL`. El documento completo en JSON. |
+| `modified_by` | `VARCHAR(255)` | Nullable. Quién hizo el último cambio. |
+| `amended_from` | `VARCHAR(255)` | Nullable. Documento origen de una enmienda. |
+| `workflow_state` | `VARCHAR(255)` | Nullable. Estado del workflow. |
 
-`owner`, `docstatus`, `creation` y `modified` se **duplican** fuera del blob porque
-son las columnas por las que se ordena y filtra. El resto de campos vive solo en
-`data`.
+Son las columnas que el motor sella y por las que ordena y filtra. Cada campo
+declarado añade además su propia columna tipada, y cada campo `Table` una tabla
+hija real.
 
-## El blob JSON
+## Columnas declaradas
 
-`data` es el documento serializado con **claves ordenadas**. El motor lo escribe
-siempre a través de `canonical_blob`:
+`ferris_schema::doctype_columns` es la única traducción de un `FieldMeta` a una
+columna física:
 
-```rust
-let canonical: serde_json::Value = serde_json::to_value(document)?;
-serde_json::to_string(&canonical)
-```
+| Fieldtype | Tipo |
+|---|---|
+| `Data`, `Select`, `Link`, `Dynamic Link`, `Attach`, `Table MultiSelect` | `VARCHAR(255)` |
+| `Small Text`, `Text`, `Long Text`, `Text Editor`, `Code`, `JSON` | `TEXT` |
+| `Int` | `BIGINT` |
+| `Float`, `Currency`, `Percent` | `DOUBLE` |
+| `Check` | `BOOLEAN` |
+| `Date` | `DATE` (`TEXT` en SQLite) |
+| `Datetime` | `TIMESTAMP`/`DATETIME` (`TEXT` en SQLite) |
+| `Password`, `Secret` y el resto de tipos conocidos | `TEXT` |
 
-`ferris_core::Value::Object` es un `HashMap`, cuyo orden de iteración no es
-estable; `serde_json::Value` usa un `BTreeMap` internamente, así que pasar por él
-produce la misma cadena siempre. Esto importa porque el plugin recibe el
-documento como texto y compara byte a byte con lo que lee después; con un orden
-inestable la comparación fallaría aunque el contenido fuera idéntico.
+Los fieldtypes de maquetación (`Section Break`, `Column Break`, `Tab Break`,
+`HTML`, `Button`, `Image`, `Fold`, `Heading`) no tienen columna: no guardan un
+valor propio. Un `JSON` declarado sí es una columna JSON, porque el JSON es el
+dato.
 
-Dentro del blob:
+Al leer, el motor reconstruye el `Value` del documento desde las columnas y las
+tablas hijas; al escribir, solo escribe columnas. Un campo que no sea columna ni
+tabla hija es un **error de escritura**, no se degrada a un blob.
 
-- `docstatus` aparece como palabra (`"draft"`, `"submitted"`, `"cancelled"`)
-  mientras la columna guarda el entero. Ambos se escriben desde el mismo valor
-  para que no puedan discrepar.
-- `creation` y `modified` aparecen también como RFC 3339, además del `BIGINT`.
-- `owner`, `name`, `modified_by` viven en el blob igualmente.
+## Tablas hijas
 
-## Child tables dentro del blob
-
-Un campo `Table` no crea una tabla hija. El valor es un **array de objetos** dentro
-del documento del padre:
-
-```json
-{
-  "name": "INV-0001",
-  "items": [
-    { "item_code": "A", "qty": 2, "idx": 1 },
-    { "item_code": "B", "qty": 1, "idx": 2 }
-  ]
-}
-```
-
-El DocType hijo se declara con `is_child_table` y el tipo que genera `#[doctype]`
-implementa `ChildDocument` (`parent`, `parentfield`, `parenttype`, `idx`), que es
-la convención de Frappe. El **motor no inyecta** esas claves: guarda el array tal
-como llega. Si tu modelo las necesita para enlazar filas con el padre, las escribe
-tu código o un hook.
+Un campo `Table` crea una tabla real para el DocType hijo, con las mismas
+columnas de sistema más `parent`, `parenttype`, `parentfield` e `idx`, y una
+columna por campo del hijo. El DocType hijo se declara con `is_child_table` y el
+tipo que genera `#[doctype]` implementa `ChildDocument`.
 
 Un Child DocType **nunca** sigue Document Naming Rules: se direcciona por su fila
 padre, y un contador global filtraría nombres entre padres distintos.
 
-La contrapartida es explícita: los campos de una child table no están indexados, y
-las Connections que viven dentro de una child table se resuelven escaneando el
-array en Rust, con un tope duro de filas por página.
+Las filas hijas se escriben en la misma transacción que el padre y se leen
+agrupadas por `parent`, `parentfield` e `idx` para reconstruir el array del
+documento.
 
 ## Metadata compilada vs contrato de cable
 
@@ -141,25 +130,26 @@ Un **Virtual** no tiene fila: `is_virtual` desvía toda la operación a su
 
 ## Índices
 
-Toda tabla recibe tres índices por defecto:
+Toda tabla recibe cuatro índices por defecto:
 
 ```rust
-("idx_owner",    &["owner"],    false),
-("idx_modified", &["modified"], false),
-("idx_docstatus",&["docstatus"],false),
+("idx_owner",          &["owner"],           false),
+("idx_modified",       &["modified"],        false),
+("idx_owner_modified", &["owner", "modified"], false),
+("idx_docstatus",      &["docstatus"],       false),
 ```
 
+Los nombres son lógicos: `ensure_index` los cualifica con la tabla
+(`idx_<tabla>_owner`), porque PostgreSQL y SQLite comparten un espacio de nombres
+de índices por esquema.
+
 Los índices declarados en `meta.indexes` se clasifican con
-`ferris_schema::migration::classify_index` en tres casos:
+`ferris_schema::migration::classify_index` en dos casos:
 
 - `DeclaredIndex::Columns` — todos los campos nombrados son columnas reales: se
-  crea un índice normal.
-- `DeclaredIndex::JsonField(field)` — un único campo sin columna: se crea un
-  índice de expresión JSON, y la lista empuja filtros `=`/`IN` sobre ese mismo
-  campo.
-- `DeclaredIndex::Unsupported` — compuesto con campos sin columna: se omite. No
-  hay forma portable (MySQL necesitaría una columna generada por campo), y se
-  prefiere no fingir que existe.
+  crea un índice normal, y la lista empuja filtros y orden.
+- `DeclaredIndex::Unsupported` — un campo sin columna (o una lista vacía): se
+  omite. Sin blob no hay expresión JSON portable que indexar.
 
 La regla de oro: un filtro solo se empuja a SQL si el índice se creó, porque ambos
 salen de la misma clasificación.
@@ -184,9 +174,10 @@ perezosa (`ensure_table`) en la primera escritura, de modo que una base sin migr
 sigue funcionando. Las dos rutas comparten `document_columns`, que es lo que impide
 que vuelvan a divergir.
 
-:::note[Sin columnas por campo]
-Que los campos vivan en `data` significa que no se pueden indexar como columnas. Es
-el precio de que un DocType compilado y uno ampliado con custom fields tengan
-exactamente el mismo esquema. Los índices de expresión JSON son la respuesta para
-los campos que de verdad se filtran.
+:::note[Una columna por campo]
+Cada campo declarado es una columna nativa: se puede filtrar, ordenar e indexar
+sin expresiones JSON. Un campo nuevo se materializa con `ensure_table`/`migrate`
+(añade la columna nullable) salvo que sea de maquetación o una tabla hija. El
+esquema sigue siendo uniforme entre un DocType compilado y uno ampliado con
+custom fields.
 :::

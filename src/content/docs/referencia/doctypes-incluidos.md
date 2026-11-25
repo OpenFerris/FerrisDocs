@@ -77,7 +77,6 @@ documentos: viven en `POST /api/data/import/{doctype}`,
 | `User Group` | Agrupación de usuarios |
 | `User Permission` | Restricciones por usuario |
 | `DocPerm` / `Custom DocPerm` | Derechos por rol y DocType (el segundo los sobrescribe) |
-| `Session` | Sesión abierta (cookie `ferris_session`) |
 | `API Key` | Clave `Authorization: token <key>:<secret>` |
 | `Activity Log`, `Access Log` | Registro de acciones y accesos |
 | `User Invitation` | Invitación pendiente |

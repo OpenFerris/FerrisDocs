@@ -47,7 +47,7 @@ Dos conversiones externas, clasificadas **una sola vez**:
 | Variante | Cuándo |
 |---|---|
 | `Missing(String)` | Falta una clave obligatoria o una variable de entorno |
-| `Invalid { key, msg }` | El valor existe y no es válido (secreto JWT corto, un gate sin su feature) |
+| `Invalid { key, msg }` | El valor existe y no es válido (una feature sin su binario, un rol imposible) |
 | `NotFound(String)` | No existe el directorio de configuración |
 | `Parse(figment::Error)` | El TOML/YAML fusionado no describe una configuración válida |
 
@@ -68,7 +68,7 @@ variantes. Un llamador reacciona a `Constraint`, no a un texto.
 | Variante | Cuándo |
 |---|---|
 | `AuthError::InvalidCredentials` | Usuario o contraseña incorrectos |
-| `AuthError::TokenExpired` / `TokenInvalid` | JWT caducado o mal formado |
+| `AuthError::TokenInvalid` | Credencial de sesión o clave de API mal formada |
 | `AuthError::AccountDisabled` | La cuenta existe y está deshabilitada |
 | `AuthError::MfaRequired` | La cuenta debe completar el segundo factor |
 | `AuthError::RateLimited` | Demasiados intentos |

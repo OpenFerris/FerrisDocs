@@ -1,6 +1,6 @@
 ---
 title: Producción
-description: Build, base de datos, Redis, JWT, TLS, CORS, workers, migraciones y actualización de una instalación Ferris.
+description: Build, base de datos, Redis, sesiones, TLS, CORS, workers, migraciones y actualización de una instalación Ferris.
 ---
 
 Esta página es la lista de decisiones que separan una instalación de desarrollo
@@ -65,20 +65,22 @@ max_connections = 20
 La contraseña embebida se redacta en los informes, pero sigue estando en el
 fichero: inyéctala por `REDIS_URL` si el fichero se versiona.
 
-## JWT y secretos
+## Sesiones y secretos
 
 ```bash
-export FERRIS_JWT_SECRET="$(openssl rand -hex 32)"
 export FERRIS_SECRET_KEY="$(openssl rand -hex 32)"
 ```
 
-- Sin secreto JWT, con menos de 32 caracteres o con `change-me-in-production`,
-  el arranque falla.
+- No hay secreto de firma JWT. La sesión es una cookie `ferris_session`
+  (o `__Host-ferris_session` con TLS o `external_url` HTTPS) respaldada por
+  `tab_session_store`; `serve`, `run` y `dev` arrancan sin ninguna variable de
+  autenticación.
 - Sin `[secrets] key`, el proceso arranca pero escribir o revelar un campo
   `Secret` falla; si el catálogo declara alguno, el arranque lo avisa.
 
-La clave de `[secrets]` no se deriva del JWT: rotar la firma de tokens no debe
-dejar ilegibles los secretos guardados.
+La clave de `[secrets]` es independiente de cualquier credencial de sesión:
+rotarla no cierra sesiones, y cerrar sesiones no deja ilegibles los secretos
+guardados.
 
 ## TLS
 
@@ -181,8 +183,6 @@ versiones con esquemas incompatibles y esperar que la migración las reconcilie.
 
 | Mensaje | Causa | Solución |
 |---|---|---|
-| `FERRIS_JWT_SECRET is not configured` | Falta el secreto | Definir la variable o `[auth] jwt_secret`. |
-| `JWT secret must be at least 32 characters` | Secreto corto | Generar 32+ caracteres. |
 | `the configuration asks for subsystems this binary was not compiled with` | Matriz de features | Recompilar o apagar el flag. |
 | `every requested role was disabled...` | `[features]` vació los roles | Habilitar un rol o recompilar. |
 | `tls.require_client_cert is set but tls.client_ca_path is missing` | mTLS incompleto | Añadir la CA o quitar la exigencia. |

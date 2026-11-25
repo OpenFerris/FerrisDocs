@@ -189,8 +189,9 @@ ferris serve --site acme
 ferris serve --all-sites --port 8000
 ```
 
-:::note Secreto JWT obligatorio
-`serve` y `run` exigen `[auth] jwt_secret` (o `FERRIS_JWT_SECRET`/`JWT_SECRET`).
-Sin él, el arranque falla con un mensaje que nombra la variable; no generan uno
-al vuelo (solo `ferris dev` lo hace, en memoria).
+:::note Sesión persistida
+`serve` y `run` no exigen ningún secreto de firma: la sesión es una cookie
+respaldada por `tab_session_store` y administrada por `tower-sessions` +
+`axum-login`. La cookie es `__Host-ferris_session` cuando hay TLS configurado o
+`external_url` es `https://`, y `ferris_session` sobre HTTP plano.
 :::

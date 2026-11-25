@@ -58,6 +58,13 @@ EXPOSE 8000
 ENTRYPOINT ["ferris", "serve"]
 ```
 
+:::caution[Contexto de build]
+`ferris-cli` depende de `ferris-core` por ruta (`../../FerrisCore`). Ese
+Dockerfile solo compila si el contexto incluye **los dos checkouts hermanos**;
+`COPY . .` desde `FerrisFramework/` deja `FerrisCore` fuera y el build falla.
+Copia ambos repositorios o vendoriza la dependencia.
+:::
+
 El binario del ejemplo se compila contra la glibc de la imagen base. Usa la misma
 imagen base para compilar y ejecutar, o un binario estático, para no mezclar
 artefactos de libc distintas.
@@ -106,7 +113,9 @@ Puntos que un manifiesto debe resolver:
   no en el ConfigMap.
 - **Persistencia** para SQLite, ficheros locales, `<wasm_dir>/<app>/` (el mundo)
   y `sites/<site>/` cuando hay sitios. Con varias réplicas, usa PostgreSQL/MySQL
-  y almacenamiento de objetos.
+  y almacenamiento de objetos. El bloqueo de login, el paso TOTP, la sesión y el
+  `state` de OAuth se persisten en la base; la instantánea de `User Permission`
+  se refresca cada 30 s por instancia.
 
 ## `--target binary`
 
@@ -158,7 +167,10 @@ de que las réplicas nuevas empiecen a recibir tráfico.
 
 Ferris puede terminar TLS él mismo o quedarse detrás de un proxy. Si el proxy
 termina TLS, el proceso habla HTTP plano: `external_url` debe ser el origen
-HTTPS público y las cookies de sesión no se marcan `Secure`.
+HTTPS público. La cookie de sesión se marca `Secure` y toma el nombre
+`__Host-ferris_session` cuando hay TLS en `[server.tls]` **o** `external_url`
+empieza por `https://`; si no, queda como `ferris_session` sin `Secure`, lo que
+solo es aceptable en desarrollo.
 
 Rutas que el proxy debe reenviar sin reescribir:
 
@@ -202,8 +214,10 @@ proxy corta antes, el límite de Ferris nunca se ejerce y el error que ve el
 usuario es el del proxy.
 
 :::caution
-`X-Forwarded-For` se registra tal cual en los logs de petición. No lo confíes
-para autorizar: úsalo solo como procedencia informativa.
+Hoy `[server] trusted_proxies` no es configurable desde `ferris.toml`: el logger
+guarda la IP del peer TCP, no la de `X-Forwarded-For`. Configurar el proxy para
+enviar la cabecera no cambia el log hasta que ese campo se cablee. No uses la IP
+del log para autorizar.
 :::
 
 ## Health
@@ -220,7 +234,7 @@ un chequeo propio contra la API.
 
 ## Variables de entorno en el contenedor
 
-Las imprescindibles son `FERRIS_JWT_SECRET`, `FERRIS_SECRET_KEY`,
+Las imprescindibles son `FERRIS_SECRET_KEY`,
 `FERRIS_SECRET_PREVIOUS_KEYS`, `DATABASE_URL`, `REDIS_URL`, `SERVER_HOST`,
 `SERVER_PORT`, `FERRIS_TLS_CERT` y `FERRIS_TLS_KEY`. El resto se monta como
 `config/ferris.toml` o se pasa con `--config`.

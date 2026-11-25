@@ -45,9 +45,9 @@ Una fila declara una relación para el panel **Connections**. Se lee de
 - **Enlace externo** (sin `table_fieldname`): una lista del DocType enlazado con
   `filters = { link_fieldname: name }`. Pasa por `DocStore::list`, es decir, por el
   filtro de `Read` del motor.
-- **Enlace interno** (`table_fieldname`): no hay columna que filtrar, así que se
-  pagina el DocType enlazado (tope duro de **100** filas) y se escanea el array en
-  Rust. Es explícito a propósito: el blob JSON no está indexado.
+- **Enlace interno** (`table_fieldname`): esta ruta no consulta la tabla hija, así
+  que se pagina el DocType enlazado (tope duro de **100** filas) y se escanea en
+  Rust. Es explícito a propósito.
 - Se omiten los enlaces `hidden` o incompletos, y los grupos sin documentos no se
   emiten.
 

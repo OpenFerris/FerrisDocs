@@ -8,17 +8,49 @@ entrada, `ferris_db::create_pool`. Esa función aplica el modo SSL, crea el
 fichero SQLite si falta e instala la tabla de control de migraciones; ninguna
 otra ruta del framework abre un pool por su cuenta.
 
-```toml
-[database]
-type = "postgres"
-host = "localhost"
-port = 5432
-name = "ferris_dev"
-user = "ferris"
-password = "ferris"
-max_connections = 20
-ssl_mode = "prefer"
-```
+:::note[Estado actual, no la visión]
+**Un pool por backend, sin `sqlx::Any`**: `Db` guarda un `DbPool`
+(`SqlitePool`, `PgPool` o `MySqlPool`), las filas y transacciones son concretas y
+la API pública no cambia. **PostgreSQL** y **MySQL/MariaDB** tienen test vivo en
+CI (`ferris-db/tests/{postgres,mysql}_live.rs`), además del test tipado con
+columnas y tablas hijas (`ferris-document/tests/typed_live.rs`).
+
+**Columnas y tablas hijas**: los campos declarados de un `DocType` tienen
+columna real y las tablas hijas (`Table`) son tablas reales; son la **única**
+fuente de verdad y el documento se reconstruye desde ellas (columnas de sistema,
+columnas declaradas y filas hijas). No hay blob JSON por documento. Los únicos
+JSON que se guardan son datos en sí: los campos declarados `JSON` y los
+snapshots históricos de `tab_version` y de las lápidas de borrado
+(`Deleted Document`). Los tipos son nativos:
+`Date` es `DATE` (`TEXT` en SQLite), `Datetime` es `TIMESTAMP`/`DATETIME`
+(`TEXT` en SQLite), `Currency`/`Percent` son `NUMERIC(21,9)`/`DECIMAL(21,9)`
+(`NUMERIC` en SQLite), `Check` es `BOOLEAN` y `Float` es
+`DOUBLE PRECISION`/`DOUBLE`/`REAL`. La lista empuja filtros y orden a las
+columnas; solo lo que no es columna queda en Rust.
+:::
+
+## Rendimiento
+
+- **SQLite**: WAL, `synchronous=NORMAL`, `busy_timeout=5s`, caché de 16 MiB y
+  `mmap_size=256 MiB` por conexión. El pool se limita a **8 conexiones** (un solo
+  escritor; más conexiones solo multiplican la caché). Un fichero, no
+  `:memory:`, usa WAL.
+- **PostgreSQL/MySQL**: pool con los tiempos de `[database]`, sentencias
+  preparadas por conexión y tipos nativos (sin conversión a texto).
+- **DDL**: la lista de tablas aseguradas se comparte por identidad de `Db`, no
+  por `DocumentEngine`. Crear un motor por petición (el logger lo hace) ya no
+  repite `CREATE TABLE`/`CREATE INDEX`.
+- **Consultas**: la lista empuja filtros y orden a columnas nativas; declara
+  `search_index` o `meta.indexes` para los campos que filtres.
+- **Búsqueda**: índice de texto completo por motor (`FTS5`, `GIN`/`tsvector`,
+  `FULLTEXT`), creado de forma perezosa y mantenido en cada escritura. La
+  búsqueda es por **tokens/frases**, no subcadena; si el índice no está
+  disponible, la lista cae al escaneo anterior. Las columnas `Password` y
+  `Secret` no se indexan: un hash o un cifrado no es texto del documento.
+- **Escritura**: las columnas del documento y sus tablas hijas van en la misma
+  transacción; la versión de auditoría es la segunda fila esperada, no un N+1.
+- **Logs**: cola acotada de 4096, lotes de 64/50 ms fuera del request path y
+  retención diaria de `Path Log`/`API Request Log` (`FERRIS_LOG_RETENTION_DAYS`).
 
 ## Campos
 
@@ -137,7 +169,8 @@ en el dialecto para no enviar `sslmode`, que MySQL ignora.
 - un `min_connections` mayor que el máximo también es un error (sqlx lo
   recortaría en silencio).
 
-El CLI fija `min_connections = 0` y deja los tiempos del pool en los valores
+El CLI fija `min_connections = 5` en el servidor (`SERVER_MIN_CONNECTIONS`) y deja
+los tiempos del pool en los valores
 del núcleo: `connect_timeout_secs = 10`, `idle_timeout_secs = 600`,
 `max_lifetime_secs = 1800`. Esos tres campos **no** se exponen en
 `config/ferris.toml`; el máximo de conexiones sí.

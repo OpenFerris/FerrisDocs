@@ -4,9 +4,11 @@ description: Base URL, convenciones, autenticación, CSRF, grupos de endpoints y
 ---
 
 La API la sirve el rol `api` del proceso (`[server] roles` o `ferris serve --api`).
-Todas las rutas viven bajo `/api`, salvo `/health` y los assets estáticos. Las
-rutas de recurso son genéricas por DocType: un DocType nuevo queda servido sin
-escribir un endpoint, y las reglas viven en su metadata, no en el router.
+La mayoría de las rutas de datos viven bajo `/api`, pero el servidor monta
+además `/health`, `/login`, `/socket.io`, `/events` y las rutas/páginas de los
+plugins. Las rutas de recurso son genéricas por DocType: un DocType nuevo queda
+servido sin escribir un endpoint, y las reglas viven en su metadata, no en el
+router.
 
 ## Base URL
 
@@ -61,7 +63,7 @@ Un listado real:
 
 Tres credenciales aceptadas, resueltas en este orden por el middleware:
 
-1. `Authorization: Bearer <jwt>` — JWT HS256 validado con `FERRIS_JWT_SECRET`.
+1. `Authorization: token <key>:<secret>` — clave de API de Frappe.
 2. `Authorization: token <key>:<secret>` — API key de Frappe.
 3. Cookie de sesión `ferris_session`.
 
@@ -73,7 +75,7 @@ cabecera `X-CSRF-Token`. Todos los detalles, incluidos MFA y OAuth, están en
 Si autenticas con cookie, `POST`, `PUT`, `PATCH` y `DELETE` exigen la cabecera
 `X-CSRF-Token` con el token de **esa** sesión. Sin ella la respuesta es `403`
 con el texto `CSRF token missing or invalid`. `GET`/`HEAD`/`OPTIONS` están
-exentos, igual que las llamadas con Bearer JWT.
+exentos, igual que las llamadas con clave de API.
 :::
 
 ## Grupos de endpoints
@@ -112,7 +114,9 @@ es distinto de "sin resultados".
 | `Cookie: ferris_session=…` | Sesión abierta por el login |
 | `X-CSRF-Token` | Token de la sesión, exigido al mutar con cookie |
 | `If-None-Match` | Pull condicional de `/api/desired-state/{entity}` (responde `304`) |
-| `X-Forwarded-For` / `X-Real-IP` | IP usada para el bloqueo por intentos fallidos |
+
+La IP que registra el bloqueo es el peer TCP; `X-Forwarded-For` y `X-Real-IP`
+no se consultan.
 
 ## Errores
 
@@ -126,7 +130,7 @@ El cuerpo de error es siempre el mismo objeto:
   `bad_request`, `conflict`, `unauthorized`, `forbidden`, `internal_error`, …).
 - `message` describe el fallo en un `4xx` y es **siempre** `"internal error"` en
   un `5xx`; el detalle se registra en el log, no se filtra al cliente.
-- Un `401` añade `WWW-Authenticate: Bearer` y `Cache-Control: no-store`.
+- Un `401` añade `Cache-Control: no-store`.
 
 La tabla completa de mapeos está en
 [errores y permisos](/api/errores-y-permisos/); la taxonomía interna, en

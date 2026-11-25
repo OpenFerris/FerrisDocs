@@ -23,6 +23,7 @@ email = true
 [email]
 default_account = "notificaciones"
 queue_concurrency = 4
+# Se leen, pero hoy la cola usa 3 intentos con su propio backoff.
 retry_attempts = 3
 retry_delay_secs = 60
 
@@ -48,7 +49,7 @@ imap_starttls = false
 |---|---|
 | `default_account` | cuenta usada cuando el job no nombra una |
 | `queue_concurrency` | envíos en paralelo del worker |
-| `retry_attempts` / `retry_delay_secs` | política de reintento de la cola |
+| `retry_attempts` / `retry_delay_secs` | **no aplicados todavía**: la cola fija 3 intentos y su propio backoff |
 | `smtp_tls` | TLS implícito (normalmente puerto 465) |
 | `smtp_starttls` | upgrade STARTTLS (normalmente 587) |
 | `imap_host` | servidor entrante; su ausencia desactiva IMAP para la cuenta |

@@ -80,7 +80,8 @@ curl -s -b cookies.txt \
 ```
 
 `order_by` acepta cualquier campo del documento. Los alias `created_at` y
-`updated_at` se traducen a `creation` y `modified`; un blob se ordena en Rust.
+`updated_at` se traducen a `creation` y `modified`; un valor sin columna se ordena
+en Rust.
 
 ### `POST /api/resource/{doctype}/list` (lista del Desk)
 

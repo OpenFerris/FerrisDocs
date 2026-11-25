@@ -36,7 +36,7 @@ Es el ciclo corto: solo se recompila la app, no el framework.
    `ferris-web/pkg`, `ferris-web/target/site/pkg` o el propio `./pkg`). Sin
    bundle, el Desk se sirve solo en SSR y avisa una vez.
 4. Fija los roles `api`, `web` y `realtime` — `server.roles` del fichero no se
-   usa en desarrollo — y construye los settings con la base de datos y el JWT de
+   usa en desarrollo — y construye los settings con la base de datos y la sesión de
    `config/ferris.toml`.
 5. Siembra un operador de desarrollo si la tabla de usuarios está vacía.
 6. Prepara el mundo de la app en `<wasm_dir>/<app>/` y publica el componente por
